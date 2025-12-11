@@ -25,7 +25,8 @@
                     },
                     animation: {
                         'fade-in': 'fadeIn 0.3s ease-out forwards',
-                        'zoom-in': 'zoomIn 0.2s ease-out forwards'
+                        'zoom-in': 'zoomIn 0.2s ease-out forwards',
+                        'pulse-slow': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
                     },
                     keyframes: {
                         fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
@@ -90,6 +91,15 @@
             align-items: center;
             justify-content: center;
             pointer-events: none;
+        }
+
+        /* Audio Player Styling */
+        audio::-webkit-media-controls-panel {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        audio::-webkit-media-controls-current-time-display,
+        audio::-webkit-media-controls-time-remaining-display {
+            color: white;
         }
     </style>
 </head>
@@ -256,10 +266,32 @@
                 <button onclick="toggleAttachmentMenu()" class="w-11 h-11 rounded-full bg-gray-800 text-gray-400 hover:text-white transition flex-shrink-0"><i class="fas fa-plus transform transition-transform" id="plus-icon"></i></button>
                 <input type="file" id="file-input-media" accept="image/*,video/*" class="hidden" onchange="handleFileSelect(this, 'media')">
                 <input type="file" id="file-input-doc" class="hidden" onchange="handleFileSelect(this, 'file')">
-                <div class="flex-1 bg-gray-800 rounded-3xl border border-gray-700/50 flex items-center px-4 py-1.5 focus-within:border-primary/50 transition">
+                
+                <!-- Main Input Container -->
+                <div class="flex-1 bg-gray-800 rounded-3xl border border-gray-700/50 flex items-center px-4 py-1.5 focus-within:border-primary/50 transition relative overflow-hidden">
+                    
+                    <!-- Text Area (Visible when not recording) -->
                     <textarea id="msg-input" rows="1" placeholder="Type a message..." class="w-full bg-transparent text-white resize-none focus:outline-none max-h-32 min-h-[40px] text-sm py-2.5" oninput="autoResize(this); handleTyping()" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"></textarea>
+
+                    <!-- Recording UI (Visible when recording) -->
+                    <div id="recording-ui" class="hidden absolute inset-0 bg-gray-800 z-10 flex items-center justify-between px-4 w-full h-full">
+                        <div class="flex items-center gap-2">
+                            <div class="w-3 h-3 bg-red-500 rounded-full animate-pulse-slow"></div>
+                            <span class="text-white text-sm font-mono" id="rec-time">00:00</span>
+                        </div>
+                        <span class="text-xs text-gray-400 animate-pulse">Recording...</span>
+                        <div class="flex items-center gap-3">
+                             <button onclick="cancelRecording()" class="w-8 h-8 rounded-full bg-gray-700 text-white hover:bg-red-600 transition flex items-center justify-center"><i class="fas fa-trash"></i></button>
+                             <button onclick="stopAndSendRecording()" class="w-8 h-8 rounded-full bg-primary text-white hover:bg-blue-600 transition flex items-center justify-center"><i class="fas fa-paper-plane"></i></button>
+                        </div>
+                    </div>
                 </div>
-                <button onclick="sendMessage()" class="w-11 h-11 rounded-full bg-primary hover:bg-blue-600 text-white transition shadow-lg flex-shrink-0"><i class="fas fa-paper-plane"></i></button>
+
+                <!-- Record Button (Visible when input empty, logic handled in JS) -->
+                <button id="btn-record-toggle" onclick="startRecording()" class="w-11 h-11 rounded-full bg-gray-800 text-gray-400 hover:text-red-500 transition shadow-lg flex-shrink-0"><i class="fas fa-microphone"></i></button>
+
+                <!-- Send Button (Usually hidden if recording, or swapped) - For simplicity keeping both but logic handles toggle -->
+                <button id="btn-send-text" onclick="sendMessage()" class="w-11 h-11 rounded-full bg-primary hover:bg-blue-600 text-white transition shadow-lg flex-shrink-0"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
     </main>
@@ -275,6 +307,12 @@
         let hostConn = null; // For Client: Connection to host.
         let calls = []; // Stores MediaConnections
         let isHost = false;
+
+        // Recording State
+        let mediaRecorder;
+        let audioChunks = [];
+        let recordingInterval;
+        let recordingStartTime;
 
         // --- Init ---
         window.onload = () => {
@@ -509,12 +547,109 @@
             document.getElementById('msg-input').value = '';
         }
 
+        // --- Voice Recording Logic ---
+        function startRecording() {
+            // Check connection first
+            if (!isHost && (!hostConn || !hostConn.open) && myMode !== 'direct') {
+                 return showToast("Connect to someone first!", "error");
+            }
+            
+            navigator.mediaDevices.getUserMedia({ audio: true })
+                .then(stream => {
+                    mediaRecorder = new MediaRecorder(stream);
+                    audioChunks = [];
+                    
+                    mediaRecorder.ondataavailable = event => {
+                        audioChunks.push(event.data);
+                    };
+
+                    mediaRecorder.onstop = () => {
+                        // Logic handled in stopAndSendRecording
+                    };
+
+                    mediaRecorder.start();
+                    
+                    // UI Updates
+                    document.getElementById('recording-ui').classList.remove('hidden');
+                    document.getElementById('msg-input').classList.add('hidden');
+                    
+                    recordingStartTime = Date.now();
+                    recordingInterval = setInterval(() => {
+                        const diff = Date.now() - recordingStartTime;
+                        const seconds = Math.floor((diff / 1000) % 60);
+                        const minutes = Math.floor((diff / 1000 / 60));
+                        document.getElementById('rec-time').innerText = 
+                            `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                    }, 1000);
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast("Microphone access denied", "error");
+                });
+        }
+
+        function stopAndSendRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop()); // Stop mic
+                
+                clearInterval(recordingInterval);
+                
+                // Wait small delay for ondataavailable to fire last chunk
+                setTimeout(() => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // webm is standard for MediaRecorder
+                    
+                    // Create File object to reuse handleIncomingFile/send logic
+                    const voiceFile = new File([audioBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
+                    
+                    // Send Logic
+                    const payload = {
+                        type: 'file',
+                        file: voiceFile,
+                        filename: voiceFile.name,
+                        filetype: voiceFile.type,
+                        filesize: voiceFile.size,
+                        previewType: 'voice', // Special marker
+                        sender: myName
+                    };
+
+                    if(isHost || myMode === 'direct') broadcastData(payload);
+                    else if(hostConn) hostConn.send(payload);
+
+                    // Local UI
+                    const url = URL.createObjectURL(audioBlob);
+                    appendVoiceMessage(url, 'out', 'Me');
+                    
+                    resetRecordingUI();
+
+                }, 200);
+            }
+        }
+
+        function cancelRecording() {
+            if (mediaRecorder) {
+                mediaRecorder.stop();
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            }
+            clearInterval(recordingInterval);
+            audioChunks = [];
+            resetRecordingUI();
+        }
+
+        function resetRecordingUI() {
+            document.getElementById('recording-ui').classList.add('hidden');
+            document.getElementById('msg-input').classList.remove('hidden');
+            document.getElementById('rec-time').innerText = "00:00";
+        }
+
         // --- File Handling ---
         function handleIncomingFile(data) {
             const blob = new Blob([data.file], {type: data.filetype});
             const url = URL.createObjectURL(blob);
+            
             if (data.previewType === 'image') appendImageMessage(url, 'in', data.sender, data.filename);
             else if (data.previewType === 'video') appendVideoMessage(url, 'in', data.sender, data.filename);
+            else if (data.previewType === 'voice') appendVoiceMessage(url, 'in', data.sender);
             else appendFileMessage(data.filename, data.filesize, 'in', url, data.filetype, data.sender);
         }
 
@@ -866,6 +1001,27 @@
                           <video src="${url}" class="rounded-xl w-full h-auto max-h-64 object-cover bg-black"></video>
                           <div class="play-overlay"><i class="fas fa-play text-white text-xl ml-1"></i></div>
                     </div>
+                </div>`;
+            chatBox.appendChild(div);
+            scrollToBottom();
+        }
+        
+        function appendVoiceMessage(url, dir, sender) {
+            const chatBox = document.getElementById('chat-box');
+            if(chatBox.querySelector('h3')) chatBox.innerHTML = '';
+            
+            const div = document.createElement('div');
+            div.className = `flex w-full ${dir === 'out' ? 'justify-end' : 'justify-start'} animate-fade-in`;
+            const bg = dir === 'out' ? 'bg-outgoing text-white' : 'bg-incoming text-gray-200';
+            
+            div.innerHTML = `
+                <div class="max-w-[85%] flex flex-col ${dir === 'out' ? 'items-end' : 'items-start'}">
+                    <span class="text-[9px] text-gray-500 mb-1 px-1">${sender}</span>
+                    <div class="${bg} p-2 rounded-2xl shadow-sm chat-bubble flex items-center gap-2">
+                         <div class="w-8 h-8 rounded-full bg-black/20 flex items-center justify-center flex-shrink-0"><i class="fas fa-microphone"></i></div>
+                         <audio controls src="${url}" class="h-8 w-48"></audio>
+                    </div>
+                    <span class="text-[9px] text-gray-600 mt-1 px-1">${getTime()}</span>
                 </div>`;
             chatBox.appendChild(div);
             scrollToBottom();
