@@ -71,7 +71,11 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
-            transform: scaleX(-1); /* Mirror */
+            transform: scaleX(-1); /* Mirror by default for cam */
+        }
+        /* Screen share shouldn't be mirrored */
+        .video-card video.no-mirror {
+            transform: scaleX(1);
         }
         
         .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
@@ -145,7 +149,7 @@
                 <div class="flex items-center justify-between bg-dark/80 p-3 rounded-xl cursor-pointer hover:bg-dark border border-primary/20" onclick="copyId()">
                     <div class="overflow-hidden mr-2">
                         <p class="text-[10px] text-gray-500 font-bold">YOUR ID</p>
-                        <p id="my-id" class="text-xs text-primary font-mono truncate font-bold">Initializing...</p>
+                        <p id="my-id" class="text-lg text-primary font-mono truncate font-bold tracking-widest">--- ---</p>
                     </div>
                     <i class="far fa-copy text-primary"></i>
                 </div>
@@ -172,7 +176,7 @@
                 <div class="flex flex-col gap-3">
                     <div class="relative">
                         <i class="fas fa-fingerprint absolute left-3 top-3.5 text-gray-500"></i>
-                        <input type="text" id="remote-id" placeholder="Enter ID to Connect" class="w-full bg-dark/50 border border-gray-700 rounded-xl py-3 pl-10 pr-3 text-sm focus:border-primary focus:outline-none">
+                        <input type="number" id="remote-id" placeholder="Enter 6-digit ID" class="w-full bg-dark/50 border border-gray-700 rounded-xl py-3 pl-10 pr-3 text-sm focus:border-primary focus:outline-none tracking-widest font-mono">
                     </div>
                     
                     <div class="grid grid-cols-2 gap-2">
@@ -226,6 +230,9 @@
                 </button>
                 <button onclick="toggleVideo()" id="btn-cam" class="w-10 h-10 rounded-full bg-gray-800 text-white border border-white/10 flex items-center justify-center hover:bg-gray-700 transition relative">
                     <i class="fas fa-video-slash"></i>
+                </button>
+                <button onclick="toggleScreenShare()" id="btn-screen" class="w-10 h-10 rounded-full bg-gray-800 text-white border border-white/10 flex items-center justify-center hover:bg-gray-700 transition relative" title="Share Screen">
+                    <i class="fas fa-desktop"></i>
                 </button>
                 <button onclick="leaveSession()" class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition shadow-lg"><i class="fas fa-phone-slash"></i></button>
             </div>
@@ -287,10 +294,10 @@
                     </div>
                 </div>
 
-                <!-- Record Button (Visible when input empty, logic handled in JS) -->
+                <!-- Record Button -->
                 <button id="btn-record-toggle" onclick="startRecording()" class="w-11 h-11 rounded-full bg-gray-800 text-gray-400 hover:text-red-500 transition shadow-lg flex-shrink-0"><i class="fas fa-microphone"></i></button>
 
-                <!-- Send Button (Usually hidden if recording, or swapped) - For simplicity keeping both but logic handles toggle -->
+                <!-- Send Button -->
                 <button id="btn-send-text" onclick="sendMessage()" class="w-11 h-11 rounded-full bg-primary hover:bg-blue-600 text-white transition shadow-lg flex-shrink-0"><i class="fas fa-paper-plane"></i></button>
             </div>
         </div>
@@ -301,12 +308,15 @@
         const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
         let peer, localStream;
         let myName = localStorage.getItem('uchat_name') || "User";
-        // Modes: 'idle', 'host-room', 'host-group', 'client-room', 'client-group', 'direct'
         let myMode = 'idle'; 
         let connections = []; // For Host: Array of clients. For Direct: [connection].
         let hostConn = null; // For Client: Connection to host.
         let calls = []; // Stores MediaConnections
         let isHost = false;
+
+        // Media State
+        let isScreenSharing = false;
+        let camStream = null; // To store camera stream when screen sharing
 
         // Recording State
         let mediaRecorder;
@@ -321,19 +331,29 @@
         };
 
         function initPeer() {
-            peer = new Peer(null, { debug: 1 });
+            // Generate a random 6-digit ID
+            const randomId = Math.floor(100000 + Math.random() * 900000).toString();
+            
+            peer = new Peer(randomId, { debug: 1 });
+            
             peer.on('open', (id) => {
                 document.getElementById('my-id').innerText = id;
-                showToast("You are online", "success");
+                showToast(`Your ID: ${id}`, "success");
             });
             peer.on('connection', handleIncomingConnection);
             peer.on('call', handleIncomingCall);
-            peer.on('error', (err) => showToast("Error: " + err.type, "error"));
+            peer.on('error', (err) => {
+                if(err.type === 'unavailable-id') {
+                    // Retry with new ID if collision (rare for 6 digits but possible)
+                    initPeer(); 
+                } else {
+                    showToast("Error: " + err.type, "error");
+                }
+            });
         }
 
         // --- Mode Handling ---
         
-        // 1. Host Mode (Room/Group)
         function setMode(mode) {
             if (connections.length > 0 || hostConn) {
                 if(!confirm("Start new session? Current connections will be lost.")) return;
@@ -349,49 +369,43 @@
             if(myMode === 'host-room') startLocalVideo();
         }
 
-        // 2. Client Mode (Join Host)
         function joinPeer() {
             const id = document.getElementById('remote-id').value.trim();
-            if(!id) return showToast("Enter Host ID", "error");
+            if(!id || id.length !== 6) return showToast("Enter valid 6-digit ID", "error");
             if(id === peer.id) return showToast("Cannot join self", "error");
 
             if(connections.length > 0 || hostConn) resetSession();
 
             isHost = false;
-            // Mode will be set upon handshake, temp status:
             document.getElementById('btn-join').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             
             hostConn = peer.connect(id, { metadata: { type: 'join-request' } });
             setupDataConnection(hostConn);
         }
 
-        // 3. Direct Mode (1v1)
         function connectDirect() {
             const id = document.getElementById('remote-id').value.trim();
-            if(!id) return showToast("Enter Peer ID", "error");
+            if(!id || id.length !== 6) return showToast("Enter 6-digit Peer ID", "error");
             if(id === peer.id) return showToast("Cannot connect to self", "error");
 
             if(connections.length > 0 || hostConn) resetSession();
 
-            isHost = false; // Direct is equal, but treating like a symmetric peer
+            isHost = false; 
             myMode = 'direct';
             
             document.getElementById('btn-direct').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
             const conn = peer.connect(id, { metadata: { type: 'direct' } });
             setupDataConnection(conn);
-            // In direct mode, we add the single connection to the array to reuse logic
             connections.push(conn);
             
             updateUIForMode('direct');
-            // NOTE: Video stays hidden until specifically requested
         }
 
         // --- Connection Logic ---
         function handleIncomingConnection(conn) {
             const meta = conn.metadata || {};
 
-            // Scenario A: I am a Host (Room/Group)
             if (isHost) {
                 if (myMode === 'host-room' && connections.length >= 4) { 
                     conn.on('open', () => { conn.send({type:'system', msg:'Room Full'}); setTimeout(()=>conn.close(),500); });
@@ -399,7 +413,6 @@
                 }
                 setupDataConnection(conn);
             } 
-            // Scenario B: Incoming Direct 1v1 Request
             else if (meta.type === 'direct') {
                 if (myMode !== 'idle' && myMode !== 'direct') {
                     conn.on('open', () => { conn.send({type:'system', msg:'User busy'}); setTimeout(()=>conn.close(),500); });
@@ -407,46 +420,37 @@
                 }
                 
                 if(confirm(`Incoming Direct Chat from ${conn.peer}. Accept?`)) {
-                    resetSession(); // Clear debris
+                    resetSession(); 
                     myMode = 'direct';
                     isHost = false;
-                    connections.push(conn); // Store in array
+                    connections.push(conn); 
                     setupDataConnection(conn);
                     updateUIForMode('direct');
                 } else {
                     conn.on('open', () => conn.close());
                 }
             }
-            // Scenario C: Incoming Join Response (Logic handled in joinPeer usually, but just in case)
             else {
-                // If we are idle and someone connects properly
                 conn.on('open', () => conn.close());
             }
         }
 
         function setupDataConnection(conn) {
             conn.on('open', () => {
-                // Determine if this is a stored connection or hostConn
                 const isStored = connections.find(c => c.peer === conn.peer);
-                
-                // Add to list if not already there (for Host/Direct)
                 if((isHost || myMode === 'direct') && !isStored) connections.push(conn);
                 
-                // Handshake
                 conn.send({ type: 'meta', sub: 'handshake', name: myName, mode: myMode }); 
 
                 updateConnectionStatus();
                 
-                // If Host, broadcast join message
                 if(isHost) {
                     broadcastData({ type: 'system', msg: 'New user joined' }, conn.peer);
-                    // Send peer list for Mesh Video (Room)
                     if(myMode === 'host-room') {
                         const peerList = connections.map(c => c.peer).filter(id => id !== conn.peer);
                         conn.send({ type: 'meta', sub: 'peer-list', peers: peerList });
                     }
                 }
-                // If Direct
                 if(myMode === 'direct') {
                      showToast("Direct Connection Established", "success");
                      document.getElementById('btn-direct').innerHTML = '<i class="fas fa-user-friends mb-1"></i><span class="text-[10px]">1v1 DIRECT</span>';
@@ -454,26 +458,18 @@
             });
 
             conn.on('data', (data) => handleData(data, conn));
-            
-            conn.on('close', () => {
-                handleDisconnect(conn.peer);
-            });
-            
-            conn.on('error', () => {
-                 showToast("Connection Error", "error");
-            });
+            conn.on('close', () => handleDisconnect(conn.peer));
+            conn.on('error', () => showToast("Connection Error", "error"));
         }
 
         function handleDisconnect(peerId) {
-            // Remove from connections
             connections = connections.filter(c => c.peer !== peerId);
             if(hostConn && hostConn.peer === peerId) hostConn = null;
 
             removeRemoteVideo(peerId);
 
-            if(isHost) {
-                broadcastData({ type: 'system', msg: 'User disconnected' });
-            } else if (myMode === 'direct') {
+            if(isHost) broadcastData({ type: 'system', msg: 'User disconnected' });
+            else if (myMode === 'direct') {
                 showToast("User Disconnected", "warning");
                 resetSession();
             } else {
@@ -483,14 +479,10 @@
             updateConnectionStatus();
         }
 
-        // --- Data Handling & Relay ---
+        // --- Data Handling ---
         function handleData(data, conn) {
-            // 1. Relay Logic (Only Host Relays)
-            if (isHost) {
-                broadcastData(data, conn.peer); 
-            }
+            if (isHost) broadcastData(data, conn.peer); 
 
-            // 2. Process Data
             switch (data.type) {
                 case 'text':
                     appendMessage(data.content, 'in', data.sender);
@@ -500,8 +492,7 @@
                     break;
                 case 'meta':
                     if(data.sub === 'handshake') {
-                        if(myMode === 'idle' && !isHost && !connections.length) { // Client receiving from Host
-                             // Set Mode based on Host
+                        if(myMode === 'idle' && !isHost && !connections.length) { 
                             if(data.mode === 'host-room') myMode = 'client-room';
                             else if(data.mode === 'host-group') myMode = 'client-group';
                             
@@ -511,7 +502,6 @@
                             document.getElementById('btn-join').innerHTML = '<i class="fas fa-sign-in-alt mb-1"></i><span class="text-[10px]">JOIN HOST</span>';
                         }
                     } else if (data.sub === 'peer-list') {
-                        // Client received list of peers to call (Room Mode)
                         if(myMode === 'client-room') connectToPeersForVideo(data.peers);
                     }
                     break;
@@ -523,9 +513,7 @@
 
         function broadcastData(data, excludePeerId = null) {
             connections.forEach(c => {
-                if (c.peer !== excludePeerId && c.open) {
-                    c.send(data);
-                }
+                if (c.peer !== excludePeerId && c.open) c.send(data);
             });
         }
 
@@ -535,41 +523,25 @@
             
             const payload = { type: 'text', content: text, sender: myName };
             
-            if (isHost || myMode === 'direct') {
-                broadcastData(payload); // In Direct mode, connections has 1 item
-            } else if (hostConn && hostConn.open) {
-                hostConn.send(payload); // Send to host
-            } else {
-                return showToast("Not connected", "error");
-            }
+            if (isHost || myMode === 'direct') broadcastData(payload); 
+            else if (hostConn && hostConn.open) hostConn.send(payload); 
+            else return showToast("Not connected", "error");
             
             appendMessage(text, 'out', 'Me');
             document.getElementById('msg-input').value = '';
         }
 
-        // --- Voice Recording Logic ---
+        // --- Voice Recording ---
         function startRecording() {
-            // Check connection first
-            if (!isHost && (!hostConn || !hostConn.open) && myMode !== 'direct') {
-                 return showToast("Connect to someone first!", "error");
-            }
+            if (!isHost && (!hostConn || !hostConn.open) && myMode !== 'direct') return showToast("Connect to someone first!", "error");
             
-            navigator.mediaDevices.getUserMedia({ audio: true })
-                .then(stream => {
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
                     mediaRecorder = new MediaRecorder(stream);
                     audioChunks = [];
                     
-                    mediaRecorder.ondataavailable = event => {
-                        audioChunks.push(event.data);
-                    };
-
-                    mediaRecorder.onstop = () => {
-                        // Logic handled in stopAndSendRecording
-                    };
-
+                    mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
                     mediaRecorder.start();
                     
-                    // UI Updates
                     document.getElementById('recording-ui').classList.remove('hidden');
                     document.getElementById('msg-input').classList.add('hidden');
                     
@@ -581,8 +553,7 @@
                         document.getElementById('rec-time').innerText = 
                             `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
                     }, 1000);
-                })
-                .catch(err => {
+                }).catch(err => {
                     console.error(err);
                     showToast("Microphone access denied", "error");
                 });
@@ -591,37 +562,29 @@
         function stopAndSendRecording() {
             if (mediaRecorder && mediaRecorder.state !== 'inactive') {
                 mediaRecorder.stop();
-                mediaRecorder.stream.getTracks().forEach(track => track.stop()); // Stop mic
-                
+                mediaRecorder.stream.getTracks().forEach(track => track.stop());
                 clearInterval(recordingInterval);
                 
-                // Wait small delay for ondataavailable to fire last chunk
                 setTimeout(() => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' }); // webm is standard for MediaRecorder
-                    
-                    // Create File object to reuse handleIncomingFile/send logic
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
                     const voiceFile = new File([audioBlob], `voice_${Date.now()}.webm`, { type: 'audio/webm' });
                     
-                    // Send Logic
                     const payload = {
                         type: 'file',
                         file: voiceFile,
                         filename: voiceFile.name,
                         filetype: voiceFile.type,
                         filesize: voiceFile.size,
-                        previewType: 'voice', // Special marker
+                        previewType: 'voice',
                         sender: myName
                     };
 
                     if(isHost || myMode === 'direct') broadcastData(payload);
                     else if(hostConn) hostConn.send(payload);
 
-                    // Local UI
                     const url = URL.createObjectURL(audioBlob);
                     appendVoiceMessage(url, 'out', 'Me');
-                    
                     resetRecordingUI();
-
                 }, 200);
             }
         }
@@ -693,41 +656,107 @@
             input.value = '';
         }
 
-        // --- Video/Audio Logic (Mesh & 1v1) ---
+        // --- Video/Screen/Audio Logic ---
         async function startLocalVideo() {
             try {
-                // Request both video and audio
                 localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                camStream = localStream; // Store reference to camera
+                
                 const videoEl = document.getElementById('local-video');
                 videoEl.srcObject = localStream;
+                videoEl.classList.remove('no-mirror'); // Mirror cam by default
                 document.getElementById('local-video-card').classList.remove('hidden');
                 
-                // Show the Video Area if hidden
                 setVideoLayout(true);
-                
-                // Update Icons
-                updateMediaIcons(true, true);
+                updateMediaIcons(true, true, false);
 
-                // If I am client in a Room, call Host immediately
                 if(!isHost && hostConn && myMode === 'client-room') {
                     const call = peer.call(hostConn.peer, localStream);
                     handleCall(call);
                 }
-                // If Direct Mode, call the other person if connected
                 if(myMode === 'direct' && connections.length > 0) {
-                     // We call the peer in the connections array
                      const call = peer.call(connections[0].peer, localStream);
                      handleCall(call);
                 }
-
             } catch (e) {
                 console.error(e);
                 showToast("Camera/Mic access denied", "error");
             }
         }
 
+        async function toggleScreenShare() {
+            if(!localStream) {
+                 showToast("Start video first", "error");
+                 return;
+            }
+
+            if(isScreenSharing) {
+                // Stop screen share -> switch back to cam
+                stopScreenShare();
+            } else {
+                // Start screen share
+                try {
+                    const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                    const screenTrack = screenStream.getVideoTracks()[0];
+                    
+                    // Handle user clicking "Stop sharing" via browser UI
+                    screenTrack.onended = () => stopScreenShare();
+
+                    // Replace track in localStream
+                    const videoSender = localStream.getVideoTracks()[0];
+                    localStream.removeTrack(videoSender);
+                    localStream.addTrack(screenTrack);
+                    
+                    // Update local video element
+                    const videoEl = document.getElementById('local-video');
+                    videoEl.srcObject = null; // Reset to force update
+                    videoEl.srcObject = localStream;
+                    videoEl.classList.add('no-mirror'); // Don't mirror screen
+
+                    // Replace track for all active calls
+                    calls.forEach(call => {
+                        const sender = call.peerConnection.getSenders().find(s => s.track.kind === 'video');
+                        if(sender) sender.replaceTrack(screenTrack);
+                    });
+
+                    isScreenSharing = true;
+                    updateMediaIcons(localStream.getAudioTracks()[0].enabled, true, true);
+
+                } catch(e) {
+                    console.error("Screen share error", e);
+                }
+            }
+        }
+
+        function stopScreenShare() {
+             if(!isScreenSharing || !camStream) return;
+             
+             // Get original cam track
+             const camTrack = camStream.getVideoTracks()[0];
+             
+             // Remove screen track
+             const screenTrack = localStream.getVideoTracks()[0];
+             screenTrack.stop(); // Stop the screen stream
+             localStream.removeTrack(screenTrack);
+             localStream.addTrack(camTrack);
+             
+             // Update local UI
+             const videoEl = document.getElementById('local-video');
+             videoEl.srcObject = null;
+             videoEl.srcObject = localStream;
+             videoEl.classList.remove('no-mirror');
+
+             // Update peers
+             calls.forEach(call => {
+                const sender = call.peerConnection.getSenders().find(s => s.track.kind === 'video');
+                if(sender) sender.replaceTrack(camTrack);
+             });
+
+             isScreenSharing = false;
+             updateMediaIcons(localStream.getAudioTracks()[0].enabled, true, false);
+        }
+
         function connectToPeersForVideo(peerList) {
-            // In Room Mode, connect to other peers for video Mesh
             peerList.forEach(pid => {
                 if(pid !== peer.id) {
                     const call = peer.call(pid, localStream);
@@ -737,43 +766,33 @@
         }
 
         function handleIncomingCall(call) {
-            // Accept calls if in Room OR Direct mode
             if (myMode.includes('room') || myMode === 'direct') {
-                
-                // FORCE SHOW VIDEO AREA on incoming call
                 setVideoLayout(true);
 
-                // If we don't have local stream, answer WITHOUT stream (Receive Only)
                 if(!localStream) {
-                     call.answer(); // Answer audio/video only from remote
+                     call.answer(); 
                      handleCall(call);
                      showToast("Incoming Video/Audio...", "info");
                 } else {
-                    // We have stream, answer with it
                     call.answer(localStream);
                     handleCall(call);
                 }
             } else {
-                call.close(); // Reject video in Group mode
+                call.close(); 
             }
         }
 
         function handleCall(call) {
             calls.push(call);
-            
             const videoId = `video-${call.peer}`;
-            if(!document.getElementById(videoId)) {
-                addRemoteVideoElement(videoId, call.peer);
-            }
+            if(!document.getElementById(videoId)) addRemoteVideoElement(videoId, call.peer);
 
             call.on('stream', (remoteStream) => {
                 const vid = document.getElementById(videoId);
                 if(vid) vid.srcObject = remoteStream;
             });
 
-            call.on('close', () => {
-                removeRemoteVideo(call.peer);
-            });
+            call.on('close', () => removeRemoteVideo(call.peer));
         }
 
         function addRemoteVideoElement(id, peerId) {
@@ -787,8 +806,6 @@
                 <div class="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white flex items-center gap-1"><i class="fas fa-user-circle"></i> Remote</div>
             `;
             container.appendChild(card);
-            
-            // Ensure layout is correct when remote video is added
             setVideoLayout(true);
         }
 
@@ -797,43 +814,39 @@
             if(card) card.remove();
         }
 
-        // New Helper to toggle between Chat-Only and Split-View
         function setVideoLayout(showVideo) {
             const videoArea = document.getElementById('video-area');
             const chatBox = document.getElementById('chat-box');
 
             if(showVideo) {
                 videoArea.classList.remove('hidden');
-                chatBox.style.height = "50%"; // Split screen
+                chatBox.style.height = "50%"; 
             } else {
                 videoArea.classList.add('hidden');
-                chatBox.style.height = "auto"; // Full screen chat
+                chatBox.style.height = "auto"; 
             }
         }
 
         function toggleAudio() {
-            if(!localStream) {
-                startLocalVideo(); // Start if not exists
-                return;
-            }
+            if(!localStream) { startLocalVideo(); return; }
             const track = localStream.getAudioTracks()[0];
             track.enabled = !track.enabled;
-            updateMediaIcons(track.enabled, localStream.getVideoTracks()[0].enabled);
+            updateMediaIcons(track.enabled, localStream.getVideoTracks()[0].enabled, isScreenSharing);
         }
 
         function toggleVideo() {
-            if(!localStream) {
-                startLocalVideo(); // Start if not exists
-                return;
-            }
+            if(!localStream) { startLocalVideo(); return; }
+            if(isScreenSharing) { showToast("Stop screen share to toggle camera", "warning"); return; }
+            
             const track = localStream.getVideoTracks()[0];
             track.enabled = !track.enabled;
-            updateMediaIcons(localStream.getAudioTracks()[0].enabled, track.enabled);
+            updateMediaIcons(localStream.getAudioTracks()[0].enabled, track.enabled, isScreenSharing);
         }
         
-        function updateMediaIcons(audioOn, videoOn) {
+        function updateMediaIcons(audioOn, videoOn, screenOn) {
             const btnMic = document.getElementById('btn-mic');
             const btnCam = document.getElementById('btn-cam');
+            const btnScreen = document.getElementById('btn-screen');
             
             if(audioOn) {
                 btnMic.classList.remove('bg-gray-800', 'text-white');
@@ -854,6 +867,14 @@
                 btnCam.classList.remove('bg-white', 'text-black');
                 btnCam.innerHTML = '<i class="fas fa-video-slash"></i>';
             }
+
+            if(screenOn) {
+                btnScreen.classList.remove('bg-gray-800', 'text-white');
+                btnScreen.classList.add('bg-green-500', 'text-white');
+            } else {
+                btnScreen.classList.add('bg-gray-800', 'text-white');
+                btnScreen.classList.remove('bg-green-500');
+            }
         }
 
         function leaveSession() {
@@ -865,35 +886,31 @@
             const title = document.getElementById('header-title');
             const mediaControls = document.getElementById('media-controls');
             
-            // Initial Reset
             mediaControls.classList.add('hidden');
-            setVideoLayout(false); // Default to Hidden Video Area
+            setVideoLayout(false); 
             
-            // Reset icons
-            updateMediaIcons(false, false);
+            updateMediaIcons(false, false, false);
             document.getElementById('local-video-card').classList.add('hidden');
 
             if (mode.includes('room')) {
                 title.innerText = isHost ? "My Room (Host)" : "In Room";
                 mediaControls.classList.remove('hidden');
-                setVideoLayout(true); // Rooms usually start with video area open
+                setVideoLayout(true); 
             } else if (mode.includes('group')) {
                 title.innerText = isHost ? "My Group (Admin)" : "In Group";
             } else if (mode === 'direct') {
                 title.innerText = "1v1 Direct Chat";
                 mediaControls.classList.remove('hidden');
-                // Note: We keep setVideoLayout(false) here so it starts closed!
             }
             
             updateConnectionStatus();
         }
 
         function updateConnectionStatus() {
-            // Count logic depends on mode
             let count = 0;
             if(myMode === 'direct') count = connections.length > 0 ? 1 : 0;
             else if(isHost) count = connections.length;
-            else count = (hostConn && hostConn.open) ? 1 : 0; // Simple client view
+            else count = (hostConn && hostConn.open) ? 1 : 0; 
 
             document.getElementById('peer-count').innerText = count + (isHost || myMode === 'direct' ? 1 : 1); // + Me
             
@@ -912,23 +929,19 @@
         }
 
         function resetSession() {
-            // Close connections
             connections.forEach(c => c.close());
             connections = [];
             if(hostConn) hostConn.close();
             hostConn = null;
-            
-            // Close calls
             calls.forEach(c => c.close());
             calls = [];
             
-            // Stop Video
             if(localStream) {
                 localStream.getTracks().forEach(t => t.stop());
                 localStream = null;
             }
+            isScreenSharing = false;
             
-            // UI Reset
             document.getElementById('video-grid').innerHTML = `
                 <div class="video-card hidden" id="local-video-card">
                     <video id="local-video" autoplay muted playsinline></video>
@@ -941,7 +954,7 @@
                 <p class="text-xs">Create a Room/Group or Enter ID to Direct Connect.</p>
             </div>`;
             
-            setVideoLayout(false); // Hide video area on reset
+            setVideoLayout(false); 
             document.getElementById('media-controls').classList.add('hidden');
             document.getElementById('btn-join').innerHTML = '<i class="fas fa-sign-in-alt mb-1"></i><span class="text-[10px]">JOIN HOST</span>';
             document.getElementById('btn-direct').innerHTML = '<i class="fas fa-user-friends mb-1"></i><span class="text-[10px]">1v1 DIRECT</span>';
@@ -954,7 +967,6 @@
         
         // --- Helper Builders (Messages) ---
         function appendMessage(text, dir, sender) {
-            // If the welcome message is there, clear it
             const chatBox = document.getElementById('chat-box');
             if(chatBox.querySelector('h3')) chatBox.innerHTML = '';
 
@@ -1065,8 +1077,6 @@
             if(menu.classList.contains('hidden')) { menu.classList.remove('hidden'); overlay.classList.remove('hidden'); icon.classList.add('rotate-45'); }
             else { menu.classList.add('hidden'); overlay.classList.add('hidden'); icon.classList.remove('rotate-45'); }
         }
-        
-        // --- Updated Modal Logic ---
         function openMediaModal(url, type, filename) {
             const modal = document.getElementById('media-modal');
             const img = document.getElementById('modal-image');
@@ -1079,24 +1089,18 @@
             } else {
                 vid.src = url; vid.classList.remove('hidden');
                 img.src = ""; img.classList.add('hidden');
-                // Auto play video when modal opens
                 vid.play().catch(e => console.log('Autoplay blocked')); 
             }
-            
             dlBtn.href = url;
             dlBtn.download = filename || 'download';
-            
             modal.classList.remove('hidden');
         }
-        
         function closeMediaModal() {
              const modal = document.getElementById('media-modal');
              const vid = document.getElementById('modal-video');
-             vid.pause(); // Stop video
+             vid.pause(); 
              modal.classList.add('hidden');
         }
-
-        // --- Direct Download Logic ---
         function directDownload(url, filename) {
             const a = document.createElement('a');
             a.href = url;
@@ -1105,7 +1109,6 @@
             a.click();
             document.body.removeChild(a);
         }
-
         function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
         function scrollToBottom() { const b = document.getElementById('chat-box'); b.scrollTop = b.scrollHeight; }
         function getTime() { return new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); }
@@ -1113,7 +1116,7 @@
         function updateMyName() { myName = document.getElementById('my-name-input').value; localStorage.setItem('uchat_name', myName); }
         function copyId() { navigator.clipboard.writeText(document.getElementById('my-id').innerText); showToast("Copied ID!", "success"); }
         function formatBytes(bytes) { if(bytes===0) return '0 B'; const i = Math.floor(Math.log(bytes)/Math.log(1024)); return parseFloat((bytes/Math.pow(1024, i)).toFixed(2)) + ' ' + ['B','KB','MB','GB'][i]; }
-        function handleTyping() { } // Simplified
+        function handleTyping() { } 
         function showToast(msg, type) {
             const colors = { error: 'bg-red-500/90 text-white', success: 'bg-green-600/90 text-white', info: 'bg-blue-600/90 text-white', warning: 'bg-yellow-600/90 text-white' };
             const t = document.createElement('div');
