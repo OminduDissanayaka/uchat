@@ -326,7 +326,7 @@
             connections.push(conn);
             
             updateUIForMode('direct');
-            // NOTE: We do NOT start video automatically for Direct mode
+            // NOTE: Video stays hidden until specifically requested
         }
 
         // --- Connection Logic ---
@@ -355,7 +355,6 @@
                     connections.push(conn); // Store in array
                     setupDataConnection(conn);
                     updateUIForMode('direct');
-                    // NOTE: We do NOT start video automatically here either
                 } else {
                     conn.on('open', () => conn.close());
                 }
@@ -548,6 +547,9 @@
                 videoEl.srcObject = localStream;
                 document.getElementById('local-video-card').classList.remove('hidden');
                 
+                // Show the Video Area if hidden
+                setVideoLayout(true);
+                
                 // Update Icons
                 updateMediaIcons(true, true);
 
@@ -582,6 +584,10 @@
         function handleIncomingCall(call) {
             // Accept calls if in Room OR Direct mode
             if (myMode.includes('room') || myMode === 'direct') {
+                
+                // FORCE SHOW VIDEO AREA on incoming call
+                setVideoLayout(true);
+
                 // If we don't have local stream, answer WITHOUT stream (Receive Only)
                 if(!localStream) {
                      call.answer(); // Answer audio/video only from remote
@@ -626,11 +632,28 @@
                 <div class="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white flex items-center gap-1"><i class="fas fa-user-circle"></i> Remote</div>
             `;
             container.appendChild(card);
+            
+            // Ensure layout is correct when remote video is added
+            setVideoLayout(true);
         }
 
         function removeRemoteVideo(peerId) {
             const card = document.getElementById(`card-${peerId}`);
             if(card) card.remove();
+        }
+
+        // New Helper to toggle between Chat-Only and Split-View
+        function setVideoLayout(showVideo) {
+            const videoArea = document.getElementById('video-area');
+            const chatBox = document.getElementById('chat-box');
+
+            if(showVideo) {
+                videoArea.classList.remove('hidden');
+                chatBox.style.height = "50%"; // Split screen
+            } else {
+                videoArea.classList.add('hidden');
+                chatBox.style.height = "auto"; // Full screen chat
+            }
         }
 
         function toggleAudio() {
@@ -686,12 +709,10 @@
         function updateUIForMode(mode) {
             const title = document.getElementById('header-title');
             const mediaControls = document.getElementById('media-controls');
-            const videoArea = document.getElementById('video-area');
-            const chatBox = document.getElementById('chat-box');
-
+            
+            // Initial Reset
             mediaControls.classList.add('hidden');
-            videoArea.classList.add('hidden');
-            chatBox.style.height = "auto";
+            setVideoLayout(false); // Default to Hidden Video Area
             
             // Reset icons
             updateMediaIcons(false, false);
@@ -700,15 +721,13 @@
             if (mode.includes('room')) {
                 title.innerText = isHost ? "My Room (Host)" : "In Room";
                 mediaControls.classList.remove('hidden');
-                videoArea.classList.remove('hidden');
-                chatBox.style.height = "50%"; 
+                setVideoLayout(true); // Rooms usually start with video area open
             } else if (mode.includes('group')) {
                 title.innerText = isHost ? "My Group (Admin)" : "In Group";
             } else if (mode === 'direct') {
                 title.innerText = "1v1 Direct Chat";
                 mediaControls.classList.remove('hidden');
-                videoArea.classList.remove('hidden');
-                chatBox.style.height = "50%";
+                // Note: We keep setVideoLayout(false) here so it starts closed!
             }
             
             updateConnectionStatus();
@@ -766,7 +785,8 @@
                 <h3 class="text-lg font-bold">Ready to Connect</h3>
                 <p class="text-xs">Create a Room/Group or Enter ID to Direct Connect.</p>
             </div>`;
-            document.getElementById('video-area').classList.add('hidden');
+            
+            setVideoLayout(false); // Hide video area on reset
             document.getElementById('media-controls').classList.add('hidden');
             document.getElementById('btn-join').innerHTML = '<i class="fas fa-sign-in-alt mb-1"></i><span class="text-[10px]">JOIN HOST</span>';
             document.getElementById('btn-direct').innerHTML = '<i class="fas fa-user-friends mb-1"></i><span class="text-[10px]">1v1 DIRECT</span>';
