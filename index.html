@@ -1,0 +1,891 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>UChat - Groups, Rooms & Direct</title>
+    
+    <!-- Scripts & Styles -->
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        dark: '#0f172a',
+                        darker: '#020617',
+                        primary: '#6366f1',
+                        secondary: '#1e293b',
+                        accent: '#8b5cf6',
+                        incoming: '#1f2937',
+                        outgoing: '#4f46e5'
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-out forwards',
+                        'zoom-in': 'zoomIn 0.2s ease-out forwards'
+                    },
+                    keyframes: {
+                        fadeIn: { '0%': { opacity: '0' }, '100%': { opacity: '1' } },
+                        zoomIn: { '0%': { opacity: '0', transform: 'scale(0.95)' }, '100%': { opacity: '1', transform: 'scale(1)' } }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #4f46e5; border-radius: 10px; }
+        body { -webkit-tap-highlight-color: transparent; }
+        .glass { background: rgba(30, 41, 59, 0.85); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sidebar-glass { background: rgba(15, 23, 42, 0.98); backdrop-filter: blur(16px); }
+        .chat-bubble { box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        
+        /* Video Grid Styling */
+        .video-grid {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+        }
+        .video-card {
+            position: relative;
+            background: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s;
+            flex: 1 1 300px; /* Responsive flex */
+            max-width: 100%;
+            aspect-ratio: 16/9;
+        }
+        .video-card video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1); /* Mirror */
+        }
+        
+        .typing-dot { animation: typing 1.4s infinite ease-in-out both; }
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes typing { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
+    </style>
+</head>
+<body class="bg-darker text-gray-100 font-sans h-[100dvh] overflow-hidden flex flex-col md:flex-row">
+
+    <!-- Image Modal -->
+    <div id="image-modal" class="fixed inset-0 z-[100] bg-black/95 hidden flex flex-col items-center justify-center p-2 backdrop-blur-sm" onclick="closeImageModal()">
+        <button class="absolute top-4 right-4 text-white bg-black/50 rounded-full w-10 h-10 flex items-center justify-center z-[101]"><i class="fas fa-times"></i></button>
+        <img id="modal-image" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg animate-zoom-in" onclick="event.stopPropagation()">
+        <a id="modal-download" href="#" download class="mt-4 bg-gray-800 text-white px-6 py-2 rounded-full flex items-center gap-2" onclick="event.stopPropagation()"><i class="fas fa-download"></i> Save</a>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast-container" class="fixed top-20 right-5 left-5 md:left-auto md:w-auto z-[60] flex flex-col gap-2 pointer-events-none"></div>
+
+    <!-- Sidebar Backdrop -->
+    <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-black/60 z-20 hidden md:hidden backdrop-blur-sm"></div>
+
+    <!-- Sidebar -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 z-30 w-[85%] max-w-sm md:w-80 sidebar-glass border-r border-gray-700/50 flex flex-col transform -translate-x-full md:translate-x-0 md:relative transition-transform duration-300 shadow-2xl">
+        <div class="p-5 border-b border-gray-700/50 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg"><i class="fas fa-bolt text-white"></i></div>
+                <div>
+                    <h1 class="text-xl font-bold text-white">UChat</h1>
+                    <p class="text-[10px] text-gray-400 font-medium tracking-widest">CONNECT FREELY</p>
+                </div>
+            </div>
+            <button onclick="toggleSidebar()" class="md:hidden w-10 h-10 flex items-center justify-center text-gray-400 bg-white/5 rounded-full"><i class="fas fa-chevron-left"></i></button>
+        </div>
+
+        <div class="p-5 flex-1 overflow-y-auto space-y-6">
+            <!-- Profile -->
+            <div class="bg-secondary/50 p-4 rounded-2xl border border-gray-700/50">
+                <label class="text-[10px] text-gray-400 font-bold mb-2 block">YOUR PROFILE</label>
+                <input type="text" id="my-name-input" value="User" class="w-full bg-dark/50 text-white p-2 rounded-lg text-sm mb-3 focus:outline-none border border-gray-600/30" onblur="updateMyName()">
+                <div class="flex items-center justify-between bg-dark/80 p-3 rounded-xl cursor-pointer hover:bg-dark border border-primary/20" onclick="copyId()">
+                    <div class="overflow-hidden mr-2">
+                        <p class="text-[10px] text-gray-500 font-bold">YOUR ID</p>
+                        <p id="my-id" class="text-xs text-primary font-mono truncate font-bold">Initializing...</p>
+                    </div>
+                    <i class="far fa-copy text-primary"></i>
+                </div>
+            </div>
+
+            <!-- Host Actions --> 
+            <div>
+                <label class="text-[10px] text-gray-400 font-bold mb-2 block">HOST A SESSION</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="setMode('room')" id="btn-create-room" class="p-3 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 flex flex-col items-center gap-1 transition">
+                        <i class="fas fa-video text-pink-400 text-lg"></i>
+                        <span class="text-xs font-bold">Host Room</span>
+                    </button>
+                    <button onclick="setMode('group')" id="btn-create-group" class="p-3 rounded-xl bg-gray-800 hover:bg-gray-700 border border-gray-700 flex flex-col items-center gap-1 transition">
+                        <i class="fas fa-users text-blue-400 text-lg"></i>
+                        <span class="text-xs font-bold">Host Group</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Connect Form -->
+            <div>
+                <label class="text-[10px] text-gray-400 font-bold mb-2 block">CONNECT TO ID</label>
+                <div class="flex flex-col gap-3">
+                    <div class="relative">
+                        <i class="fas fa-fingerprint absolute left-3 top-3.5 text-gray-500"></i>
+                        <input type="text" id="remote-id" placeholder="Enter ID to Connect" class="w-full bg-dark/50 border border-gray-700 rounded-xl py-3 pl-10 pr-3 text-sm focus:border-primary focus:outline-none">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="connectDirect()" id="btn-direct" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg flex flex-col items-center justify-center">
+                            <i class="fas fa-user-friends mb-1"></i>
+                            <span class="text-[10px]">1v1 DIRECT</span>
+                        </button>
+                        <button onclick="joinPeer()" id="btn-join" class="bg-primary hover:bg-blue-600 text-white font-bold py-3 rounded-xl transition shadow-lg flex flex-col items-center justify-center">
+                            <i class="fas fa-sign-in-alt mb-1"></i>
+                            <span class="text-[10px]">JOIN HOST</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status -->
+            <div id="status-card" class="hidden p-4 rounded-xl bg-green-500/10 border border-green-500/20">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center border border-gray-600">
+                        <i id="status-icon" class="fas fa-check text-green-400"></i>
+                    </div>
+                    <div>
+                        <p class="text-sm font-bold text-white" id="connection-mode-display">Connected</p>
+                        <p class="text-[10px] text-green-400 font-medium"><span id="peer-count">1</span> Connection(s)</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col relative h-full z-10 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] bg-fixed">
+        
+        <!-- Navbar -->
+        <header class="h-16 glass flex items-center justify-between px-4 z-20 shadow-md">
+            <div class="flex items-center gap-3">
+                <button onclick="toggleSidebar()" class="md:hidden text-gray-300 text-xl"><i class="fas fa-bars"></i></button>
+                <div>
+                    <h2 class="font-bold text-white text-base truncate" id="header-title">UChat</h2>
+                    <div class="flex items-center gap-1.5">
+                        <div id="header-status-dot" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                        <span class="text-[10px] text-gray-400 font-medium" id="header-status-text">Disconnected</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Controls (Visible in Room & Direct Mode) -->
+            <div id="media-controls" class="hidden flex gap-2">
+                <button onclick="toggleAudio()" id="btn-mic" class="w-10 h-10 rounded-full bg-gray-800 text-white border border-white/10 flex items-center justify-center hover:bg-gray-700 transition relative">
+                    <i class="fas fa-microphone-slash"></i>
+                </button>
+                <button onclick="toggleVideo()" id="btn-cam" class="w-10 h-10 rounded-full bg-gray-800 text-white border border-white/10 flex items-center justify-center hover:bg-gray-700 transition relative">
+                    <i class="fas fa-video-slash"></i>
+                </button>
+                <button onclick="leaveSession()" class="w-10 h-10 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition shadow-lg"><i class="fas fa-phone-slash"></i></button>
+            </div>
+        </header>
+
+        <!-- Video Grid (Room & Direct Only) -->
+        <div id="video-area" class="hidden flex-1 p-2 bg-black/40 backdrop-blur-sm relative transition-all duration-300">
+            <div id="video-grid" class="video-grid">
+                <!-- Local Video -->
+                <div class="video-card hidden" id="local-video-card">
+                    <video id="local-video" autoplay muted playsinline></video>
+                    <div class="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white flex items-center gap-1"><i class="fas fa-user"></i> You</div>
+                </div>
+                <!-- Remote videos will be added here -->
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div id="chat-box" class="flex-1 overflow-y-auto p-4 space-y-3 scroll-smooth pb-20">
+            <div class="flex flex-col items-center justify-center h-[80%] text-gray-600 opacity-40 select-none px-6 text-center">
+                <i class="fas fa-paper-plane text-4xl mb-3"></i>
+                <h3 class="text-lg font-bold">Ready to Connect</h3>
+                <p class="text-xs">Create a Room/Group or Enter ID to Direct Connect.</p>
+            </div>
+        </div>
+
+        <!-- Attachment Menu -->
+        <div id="attachment-overlay" class="fixed inset-0 bg-black/50 z-20 hidden backdrop-blur-sm" onclick="toggleAttachmentMenu()"></div>
+        <div id="attachment-menu" class="hidden absolute bottom-20 left-4 bg-gray-800 border border-gray-700 rounded-2xl shadow-2xl p-2 flex flex-col gap-1 w-64 animate-fade-in z-30">
+            <button onclick="triggerFileSelect('media')" class="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-xl text-left transition"><i class="fas fa-photo-video text-purple-400"></i> <span class="text-sm font-bold text-gray-200">Media</span></button>
+            <button onclick="triggerFileSelect('file')" class="flex items-center gap-3 p-3 hover:bg-gray-700 rounded-xl text-left transition"><i class="fas fa-file-alt text-blue-400"></i> <span class="text-sm font-bold text-gray-200">File (5GB)</span></button>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-2 md:p-4 bg-darker/90 backdrop-blur-md border-t border-gray-800 z-20 flex-shrink-0 safe-area-bottom">
+            <div id="typing-indicator" class="hidden text-[10px] text-primary ml-12 mb-1 font-medium">Someone is typing <span class="typing-dot">.</span><span class="typing-dot">.</span><span class="typing-dot">.</span></div>
+            <div class="flex items-end gap-2 max-w-5xl mx-auto">
+                <button onclick="toggleAttachmentMenu()" class="w-11 h-11 rounded-full bg-gray-800 text-gray-400 hover:text-white transition flex-shrink-0"><i class="fas fa-plus transform transition-transform" id="plus-icon"></i></button>
+                <input type="file" id="file-input-media" accept="image/*,video/*" class="hidden" onchange="handleFileSelect(this, 'media')">
+                <input type="file" id="file-input-doc" class="hidden" onchange="handleFileSelect(this, 'file')">
+                <div class="flex-1 bg-gray-800 rounded-3xl border border-gray-700/50 flex items-center px-4 py-1.5 focus-within:border-primary/50 transition">
+                    <textarea id="msg-input" rows="1" placeholder="Type a message..." class="w-full bg-transparent text-white resize-none focus:outline-none max-h-32 min-h-[40px] text-sm py-2.5" oninput="autoResize(this); handleTyping()" onkeydown="if(event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); sendMessage(); }"></textarea>
+                </div>
+                <button onclick="sendMessage()" class="w-11 h-11 rounded-full bg-primary hover:bg-blue-600 text-white transition shadow-lg flex-shrink-0"><i class="fas fa-paper-plane"></i></button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // --- Configuration & State ---
+        const MAX_FILE_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
+        let peer, localStream;
+        let myName = localStorage.getItem('uchat_name') || "User";
+        // Modes: 'idle', 'host-room', 'host-group', 'client-room', 'client-group', 'direct'
+        let myMode = 'idle'; 
+        let connections = []; // For Host: Array of clients. For Direct: [connection].
+        let hostConn = null; // For Client: Connection to host.
+        let calls = []; // Stores MediaConnections
+        let isHost = false;
+
+        // --- Init ---
+        window.onload = () => {
+            document.getElementById('my-name-input').value = myName;
+            initPeer();
+        };
+
+        function initPeer() {
+            peer = new Peer(null, { debug: 1 });
+            peer.on('open', (id) => {
+                document.getElementById('my-id').innerText = id;
+                showToast("You are online", "success");
+            });
+            peer.on('connection', handleIncomingConnection);
+            peer.on('call', handleIncomingCall);
+            peer.on('error', (err) => showToast("Error: " + err.type, "error"));
+        }
+
+        // --- Mode Handling ---
+        
+        // 1. Host Mode (Room/Group)
+        function setMode(mode) {
+            if (connections.length > 0 || hostConn) {
+                if(!confirm("Start new session? Current connections will be lost.")) return;
+                resetSession();
+            }
+            
+            isHost = true;
+            myMode = mode === 'room' ? 'host-room' : 'host-group';
+            
+            updateUIForMode(myMode);
+            showToast(`${mode === 'room' ? 'Room' : 'Group'} Created! Share your ID.`, "success");
+            
+            if(myMode === 'host-room') startLocalVideo();
+        }
+
+        // 2. Client Mode (Join Host)
+        function joinPeer() {
+            const id = document.getElementById('remote-id').value.trim();
+            if(!id) return showToast("Enter Host ID", "error");
+            if(id === peer.id) return showToast("Cannot join self", "error");
+
+            if(connections.length > 0 || hostConn) resetSession();
+
+            isHost = false;
+            // Mode will be set upon handshake, temp status:
+            document.getElementById('btn-join').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            hostConn = peer.connect(id, { metadata: { type: 'join-request' } });
+            setupDataConnection(hostConn);
+        }
+
+        // 3. Direct Mode (1v1)
+        function connectDirect() {
+            const id = document.getElementById('remote-id').value.trim();
+            if(!id) return showToast("Enter Peer ID", "error");
+            if(id === peer.id) return showToast("Cannot connect to self", "error");
+
+            if(connections.length > 0 || hostConn) resetSession();
+
+            isHost = false; // Direct is equal, but treating like a symmetric peer
+            myMode = 'direct';
+            
+            document.getElementById('btn-direct').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            const conn = peer.connect(id, { metadata: { type: 'direct' } });
+            setupDataConnection(conn);
+            // In direct mode, we add the single connection to the array to reuse logic
+            connections.push(conn);
+            
+            updateUIForMode('direct');
+            // NOTE: We do NOT start video automatically for Direct mode
+        }
+
+        // --- Connection Logic ---
+        function handleIncomingConnection(conn) {
+            const meta = conn.metadata || {};
+
+            // Scenario A: I am a Host (Room/Group)
+            if (isHost) {
+                if (myMode === 'host-room' && connections.length >= 4) { 
+                    conn.on('open', () => { conn.send({type:'system', msg:'Room Full'}); setTimeout(()=>conn.close(),500); });
+                    return;
+                }
+                setupDataConnection(conn);
+            } 
+            // Scenario B: Incoming Direct 1v1 Request
+            else if (meta.type === 'direct') {
+                if (myMode !== 'idle' && myMode !== 'direct') {
+                    conn.on('open', () => { conn.send({type:'system', msg:'User busy'}); setTimeout(()=>conn.close(),500); });
+                    return;
+                }
+                
+                if(confirm(`Incoming Direct Chat from ${conn.peer}. Accept?`)) {
+                    resetSession(); // Clear debris
+                    myMode = 'direct';
+                    isHost = false;
+                    connections.push(conn); // Store in array
+                    setupDataConnection(conn);
+                    updateUIForMode('direct');
+                    // NOTE: We do NOT start video automatically here either
+                } else {
+                    conn.on('open', () => conn.close());
+                }
+            }
+            // Scenario C: Incoming Join Response (Logic handled in joinPeer usually, but just in case)
+            else {
+                // If we are idle and someone connects properly
+                conn.on('open', () => conn.close());
+            }
+        }
+
+        function setupDataConnection(conn) {
+            conn.on('open', () => {
+                // Determine if this is a stored connection or hostConn
+                const isStored = connections.find(c => c.peer === conn.peer);
+                
+                // Add to list if not already there (for Host/Direct)
+                if((isHost || myMode === 'direct') && !isStored) connections.push(conn);
+                
+                // Handshake
+                conn.send({ type: 'meta', sub: 'handshake', name: myName, mode: myMode }); 
+
+                updateConnectionStatus();
+                
+                // If Host, broadcast join message
+                if(isHost) {
+                    broadcastData({ type: 'system', msg: 'New user joined' }, conn.peer);
+                    // Send peer list for Mesh Video (Room)
+                    if(myMode === 'host-room') {
+                        const peerList = connections.map(c => c.peer).filter(id => id !== conn.peer);
+                        conn.send({ type: 'meta', sub: 'peer-list', peers: peerList });
+                    }
+                }
+                // If Direct
+                if(myMode === 'direct') {
+                     showToast("Direct Connection Established", "success");
+                     document.getElementById('btn-direct').innerHTML = '<i class="fas fa-user-friends mb-1"></i><span class="text-[10px]">1v1 DIRECT</span>';
+                }
+            });
+
+            conn.on('data', (data) => handleData(data, conn));
+            
+            conn.on('close', () => {
+                handleDisconnect(conn.peer);
+            });
+            
+            conn.on('error', () => {
+                 showToast("Connection Error", "error");
+            });
+        }
+
+        function handleDisconnect(peerId) {
+            // Remove from connections
+            connections = connections.filter(c => c.peer !== peerId);
+            if(hostConn && hostConn.peer === peerId) hostConn = null;
+
+            removeRemoteVideo(peerId);
+
+            if(isHost) {
+                broadcastData({ type: 'system', msg: 'User disconnected' });
+            } else if (myMode === 'direct') {
+                showToast("User Disconnected", "warning");
+                resetSession();
+            } else {
+                showToast("Host Disconnected", "error");
+                resetSession();
+            }
+            updateConnectionStatus();
+        }
+
+        // --- Data Handling & Relay ---
+        function handleData(data, conn) {
+            // 1. Relay Logic (Only Host Relays)
+            if (isHost) {
+                broadcastData(data, conn.peer); 
+            }
+
+            // 2. Process Data
+            switch (data.type) {
+                case 'text':
+                    appendMessage(data.content, 'in', data.sender);
+                    break;
+                case 'file':
+                    handleIncomingFile(data);
+                    break;
+                case 'meta':
+                    if(data.sub === 'handshake') {
+                        if(myMode === 'idle' && !isHost && !connections.length) { // Client receiving from Host
+                             // Set Mode based on Host
+                            if(data.mode === 'host-room') myMode = 'client-room';
+                            else if(data.mode === 'host-group') myMode = 'client-group';
+                            
+                            updateUIForMode(myMode);
+                            if(myMode === 'client-room') startLocalVideo();
+                            showToast(`Joined ${data.name}`, "success");
+                            document.getElementById('btn-join').innerHTML = '<i class="fas fa-sign-in-alt mb-1"></i><span class="text-[10px]">JOIN HOST</span>';
+                        }
+                    } else if (data.sub === 'peer-list') {
+                        // Client received list of peers to call (Room Mode)
+                        if(myMode === 'client-room') connectToPeersForVideo(data.peers);
+                    }
+                    break;
+                case 'system':
+                    showToast(data.msg, "info");
+                    break;
+            }
+        }
+
+        function broadcastData(data, excludePeerId = null) {
+            connections.forEach(c => {
+                if (c.peer !== excludePeerId && c.open) {
+                    c.send(data);
+                }
+            });
+        }
+
+        function sendMessage() {
+            const text = document.getElementById('msg-input').value.trim();
+            if(!text) return;
+            
+            const payload = { type: 'text', content: text, sender: myName };
+            
+            if (isHost || myMode === 'direct') {
+                broadcastData(payload); // In Direct mode, connections has 1 item
+            } else if (hostConn && hostConn.open) {
+                hostConn.send(payload); // Send to host
+            } else {
+                return showToast("Not connected", "error");
+            }
+            
+            appendMessage(text, 'out', 'Me');
+            document.getElementById('msg-input').value = '';
+        }
+
+        // --- File Handling ---
+        function handleIncomingFile(data) {
+            const blob = new Blob([data.file], {type: data.filetype});
+            const url = URL.createObjectURL(blob);
+            if (data.previewType === 'image') appendImageMessage(url, 'in', data.sender, data.filename);
+            else if (data.previewType === 'video') appendVideoMessage(url, 'in', data.sender, data.filename);
+            else appendFileMessage(data.filename, data.filesize, 'in', url, data.filetype, data.sender);
+        }
+
+        function triggerFileSelect(mode) {
+            toggleAttachmentMenu();
+            document.getElementById(mode === 'media' ? 'file-input-media' : 'file-input-doc').click();
+        }
+
+        function handleFileSelect(input, mode) {
+            const file = input.files[0];
+            if(!file) return;
+            if(file.size > MAX_FILE_SIZE) { alert("File too large (>5GB)"); return; }
+            if(file.size > 500*1024*1024 && !confirm("Large file. Continue?")) return;
+
+            showToast("Sending file...", "info");
+            
+            let previewType = null;
+            if (mode === 'media') {
+                if (file.type.startsWith('image/')) previewType = 'image';
+                else if (file.type.startsWith('video/')) previewType = 'video';
+            }
+
+            const payload = {
+                type: 'file',
+                file: file,
+                filename: file.name,
+                filetype: file.type,
+                filesize: file.size,
+                previewType: previewType,
+                sender: myName
+            };
+
+            if(isHost || myMode === 'direct') broadcastData(payload);
+            else if(hostConn) hostConn.send(payload);
+
+            const url = URL.createObjectURL(file);
+            if (previewType === 'image') appendImageMessage(url, 'out', 'Me', file.name);
+            else if (previewType === 'video') appendVideoMessage(url, 'out', 'Me', file.name);
+            else appendFileMessage(file.name, file.size, 'out', url, file.type, 'Me');
+
+            input.value = '';
+        }
+
+        // --- Video/Audio Logic (Mesh & 1v1) ---
+        async function startLocalVideo() {
+            try {
+                // Request both video and audio
+                localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                const videoEl = document.getElementById('local-video');
+                videoEl.srcObject = localStream;
+                document.getElementById('local-video-card').classList.remove('hidden');
+                
+                // Update Icons
+                updateMediaIcons(true, true);
+
+                // If I am client in a Room, call Host immediately
+                if(!isHost && hostConn && myMode === 'client-room') {
+                    const call = peer.call(hostConn.peer, localStream);
+                    handleCall(call);
+                }
+                // If Direct Mode, call the other person if connected
+                if(myMode === 'direct' && connections.length > 0) {
+                     // We call the peer in the connections array
+                     const call = peer.call(connections[0].peer, localStream);
+                     handleCall(call);
+                }
+
+            } catch (e) {
+                console.error(e);
+                showToast("Camera/Mic access denied", "error");
+            }
+        }
+
+        function connectToPeersForVideo(peerList) {
+            // In Room Mode, connect to other peers for video Mesh
+            peerList.forEach(pid => {
+                if(pid !== peer.id) {
+                    const call = peer.call(pid, localStream);
+                    handleCall(call);
+                }
+            });
+        }
+
+        function handleIncomingCall(call) {
+            // Accept calls if in Room OR Direct mode
+            if (myMode.includes('room') || myMode === 'direct') {
+                // If we don't have local stream, answer WITHOUT stream (Receive Only)
+                if(!localStream) {
+                     call.answer(); // Answer audio/video only from remote
+                     handleCall(call);
+                     showToast("Incoming Video/Audio...", "info");
+                } else {
+                    // We have stream, answer with it
+                    call.answer(localStream);
+                    handleCall(call);
+                }
+            } else {
+                call.close(); // Reject video in Group mode
+            }
+        }
+
+        function handleCall(call) {
+            calls.push(call);
+            
+            const videoId = `video-${call.peer}`;
+            if(!document.getElementById(videoId)) {
+                addRemoteVideoElement(videoId, call.peer);
+            }
+
+            call.on('stream', (remoteStream) => {
+                const vid = document.getElementById(videoId);
+                if(vid) vid.srcObject = remoteStream;
+            });
+
+            call.on('close', () => {
+                removeRemoteVideo(call.peer);
+            });
+        }
+
+        function addRemoteVideoElement(id, peerId) {
+            const container = document.getElementById('video-grid');
+            const card = document.createElement('div');
+            card.className = "video-card animate-zoom-in";
+            card.id = `card-${peerId}`;
+            
+            card.innerHTML = `
+                <video id="${id}" autoplay playsinline></video>
+                <div class="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white flex items-center gap-1"><i class="fas fa-user-circle"></i> Remote</div>
+            `;
+            container.appendChild(card);
+        }
+
+        function removeRemoteVideo(peerId) {
+            const card = document.getElementById(`card-${peerId}`);
+            if(card) card.remove();
+        }
+
+        function toggleAudio() {
+            if(!localStream) {
+                startLocalVideo(); // Start if not exists
+                return;
+            }
+            const track = localStream.getAudioTracks()[0];
+            track.enabled = !track.enabled;
+            updateMediaIcons(track.enabled, localStream.getVideoTracks()[0].enabled);
+        }
+
+        function toggleVideo() {
+            if(!localStream) {
+                startLocalVideo(); // Start if not exists
+                return;
+            }
+            const track = localStream.getVideoTracks()[0];
+            track.enabled = !track.enabled;
+            updateMediaIcons(localStream.getAudioTracks()[0].enabled, track.enabled);
+        }
+        
+        function updateMediaIcons(audioOn, videoOn) {
+            const btnMic = document.getElementById('btn-mic');
+            const btnCam = document.getElementById('btn-cam');
+            
+            if(audioOn) {
+                btnMic.classList.remove('bg-gray-800', 'text-white');
+                btnMic.classList.add('bg-white', 'text-black');
+                btnMic.innerHTML = '<i class="fas fa-microphone"></i>';
+            } else {
+                btnMic.classList.add('bg-gray-800', 'text-white');
+                btnMic.classList.remove('bg-white', 'text-black');
+                btnMic.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+            }
+            
+            if(videoOn) {
+                btnCam.classList.remove('bg-gray-800', 'text-white');
+                btnCam.classList.add('bg-white', 'text-black');
+                btnCam.innerHTML = '<i class="fas fa-video"></i>';
+            } else {
+                btnCam.classList.add('bg-gray-800', 'text-white');
+                btnCam.classList.remove('bg-white', 'text-black');
+                btnCam.innerHTML = '<i class="fas fa-video-slash"></i>';
+            }
+        }
+
+        function leaveSession() {
+            if(confirm("Disconnect Session?")) resetSession();
+        }
+
+        // --- UI Updates ---
+        function updateUIForMode(mode) {
+            const title = document.getElementById('header-title');
+            const mediaControls = document.getElementById('media-controls');
+            const videoArea = document.getElementById('video-area');
+            const chatBox = document.getElementById('chat-box');
+
+            mediaControls.classList.add('hidden');
+            videoArea.classList.add('hidden');
+            chatBox.style.height = "auto";
+            
+            // Reset icons
+            updateMediaIcons(false, false);
+            document.getElementById('local-video-card').classList.add('hidden');
+
+            if (mode.includes('room')) {
+                title.innerText = isHost ? "My Room (Host)" : "In Room";
+                mediaControls.classList.remove('hidden');
+                videoArea.classList.remove('hidden');
+                chatBox.style.height = "50%"; 
+            } else if (mode.includes('group')) {
+                title.innerText = isHost ? "My Group (Admin)" : "In Group";
+            } else if (mode === 'direct') {
+                title.innerText = "1v1 Direct Chat";
+                mediaControls.classList.remove('hidden');
+                videoArea.classList.remove('hidden');
+                chatBox.style.height = "50%";
+            }
+            
+            updateConnectionStatus();
+        }
+
+        function updateConnectionStatus() {
+            // Count logic depends on mode
+            let count = 0;
+            if(myMode === 'direct') count = connections.length > 0 ? 1 : 0;
+            else if(isHost) count = connections.length;
+            else count = (hostConn && hostConn.open) ? 1 : 0; // Simple client view
+
+            document.getElementById('peer-count').innerText = count + (isHost || myMode === 'direct' ? 1 : 1); // + Me
+            
+            const dot = document.getElementById('header-status-dot');
+            const txt = document.getElementById('header-status-text');
+            
+            if (myMode !== 'idle') {
+                dot.className = "w-2 h-2 rounded-full bg-green-500 shadow-[0_0_8px_#22c55e]";
+                txt.innerText = "Online";
+                document.getElementById('status-card').classList.remove('hidden');
+            } else {
+                dot.className = "w-2 h-2 rounded-full bg-red-500";
+                txt.innerText = "Disconnected";
+                document.getElementById('status-card').classList.add('hidden');
+            }
+        }
+
+        function resetSession() {
+            // Close connections
+            connections.forEach(c => c.close());
+            connections = [];
+            if(hostConn) hostConn.close();
+            hostConn = null;
+            
+            // Close calls
+            calls.forEach(c => c.close());
+            calls = [];
+            
+            // Stop Video
+            if(localStream) {
+                localStream.getTracks().forEach(t => t.stop());
+                localStream = null;
+            }
+            
+            // UI Reset
+            document.getElementById('video-grid').innerHTML = `
+                <div class="video-card hidden" id="local-video-card">
+                    <video id="local-video" autoplay muted playsinline></video>
+                    <div class="absolute bottom-2 left-2 bg-black/60 px-2 py-1 rounded text-[10px] text-white flex items-center gap-1"><i class="fas fa-user"></i> You</div>
+                </div>`;
+            document.getElementById('chat-box').innerHTML = `
+            <div class="flex flex-col items-center justify-center h-[80%] text-gray-600 opacity-40 select-none px-6 text-center">
+                <i class="fas fa-paper-plane text-4xl mb-3"></i>
+                <h3 class="text-lg font-bold">Ready to Connect</h3>
+                <p class="text-xs">Create a Room/Group or Enter ID to Direct Connect.</p>
+            </div>`;
+            document.getElementById('video-area').classList.add('hidden');
+            document.getElementById('media-controls').classList.add('hidden');
+            document.getElementById('btn-join').innerHTML = '<i class="fas fa-sign-in-alt mb-1"></i><span class="text-[10px]">JOIN HOST</span>';
+            document.getElementById('btn-direct').innerHTML = '<i class="fas fa-user-friends mb-1"></i><span class="text-[10px]">1v1 DIRECT</span>';
+            
+            isHost = false;
+            myMode = 'idle';
+            document.getElementById('header-title').innerText = "UChat";
+            updateConnectionStatus();
+        }
+        
+        // --- Helper Builders (Messages) ---
+        function appendMessage(text, dir, sender) {
+            // If the welcome message is there, clear it
+            const chatBox = document.getElementById('chat-box');
+            if(chatBox.querySelector('h3')) chatBox.innerHTML = '';
+
+            const div = document.createElement('div');
+            div.className = `flex w-full ${dir === 'out' ? 'justify-end' : 'justify-start'} animate-fade-in`;
+            const bg = dir === 'out' ? 'bg-outgoing text-white rounded-br-none' : 'bg-incoming text-gray-200 rounded-bl-none';
+            div.innerHTML = `
+                <div class="max-w-[85%] flex flex-col ${dir === 'out' ? 'items-end' : 'items-start'}">
+                    <span class="text-[9px] text-gray-500 mb-1 px-1">${sender}</span>
+                    <div class="${bg} px-4 py-2.5 rounded-2xl shadow-sm chat-bubble text-[15px] break-words">${linkify(text)}</div>
+                    <span class="text-[9px] text-gray-600 mt-1 px-1">${getTime()}</span>
+                </div>`;
+            chatBox.appendChild(div);
+            scrollToBottom();
+        }
+
+        function appendImageMessage(url, dir, sender, filename) {
+             const chatBox = document.getElementById('chat-box');
+            if(chatBox.querySelector('h3')) chatBox.innerHTML = '';
+            
+            const div = document.createElement('div');
+            div.className = `flex w-full ${dir === 'out' ? 'justify-end' : 'justify-start'} animate-fade-in`;
+            div.innerHTML = `
+                <div class="max-w-[70%] flex flex-col ${dir === 'out' ? 'items-end' : 'items-start'}">
+                    <span class="text-[9px] text-gray-500 mb-1 px-1">${sender}</span>
+                    <div class="bg-gray-800 p-1 rounded-2xl shadow-md border border-gray-700/50" onclick="openImageModal('${url}')">
+                        <img src="${url}" class="rounded-xl w-full h-auto max-h-64 object-cover bg-black cursor-pointer">
+                    </div>
+                </div>`;
+            chatBox.appendChild(div);
+            scrollToBottom();
+        }
+        
+        function appendVideoMessage(url, dir, sender, filename) {
+            const chatBox = document.getElementById('chat-box');
+            if(chatBox.querySelector('h3')) chatBox.innerHTML = '';
+
+            const div = document.createElement('div');
+            div.className = `flex w-full ${dir === 'out' ? 'justify-end' : 'justify-start'} animate-fade-in`;
+            div.innerHTML = `
+                <div class="max-w-[70%] flex flex-col ${dir === 'out' ? 'items-end' : 'items-start'}">
+                    <span class="text-[9px] text-gray-500 mb-1 px-1">${sender}</span>
+                    <div class="bg-gray-800 p-1 rounded-2xl shadow-md border border-gray-700/50">
+                          <video src="${url}" controls class="w-full rounded-xl max-h-64 bg-black"></video>
+                    </div>
+                </div>`;
+            chatBox.appendChild(div);
+            scrollToBottom();
+        }
+
+        function appendFileMessage(name, size, dir, url, type, sender) {
+            const chatBox = document.getElementById('chat-box');
+            if(chatBox.querySelector('h3')) chatBox.innerHTML = '';
+
+            const div = document.createElement('div');
+            div.className = `flex w-full ${dir === 'out' ? 'justify-end' : 'justify-start'} animate-fade-in`;
+            const bg = dir === 'out' ? 'bg-outgoing' : 'bg-incoming';
+            div.innerHTML = `
+                <div class="max-w-[85%] flex flex-col ${dir === 'out' ? 'items-end' : 'items-start'}">
+                      <span class="text-[9px] text-gray-500 mb-1 px-1">${sender}</span>
+                      <div class="${bg} p-3 rounded-2xl text-white shadow-md flex items-center gap-3 w-full border border-white/5 cursor-pointer" onclick="window.open('${url}')">
+                        <div class="w-10 h-10 bg-black/20 rounded-lg flex items-center justify-center flex-shrink-0"><i class="fas fa-file-alt text-xl"></i></div>
+                        <div class="flex-1 min-w-0">
+                            <h4 class="font-bold text-sm truncate">${name}</h4>
+                            <p class="text-[10px] opacity-80">${formatBytes(size)}</p>
+                        </div>
+                        ${dir === 'in' ? `<a href="${url}" download="${name}" class="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center"><i class="fas fa-arrow-down text-xs"></i></a>` : ''}
+                      </div>
+                </div>`;
+            chatBox.appendChild(div);
+            scrollToBottom();
+        }
+
+        // --- Utils ---
+        function toggleSidebar() { 
+            const sb = document.getElementById('sidebar');
+            const bd = document.getElementById('sidebar-backdrop');
+            const closed = sb.classList.contains('-translate-x-full');
+            if(closed) { sb.classList.remove('-translate-x-full'); bd.classList.remove('hidden'); }
+            else { sb.classList.add('-translate-x-full'); bd.classList.add('hidden'); }
+        }
+        function toggleAttachmentMenu() {
+            const menu = document.getElementById('attachment-menu');
+            const overlay = document.getElementById('attachment-overlay');
+            const icon = document.getElementById('plus-icon');
+            if(menu.classList.contains('hidden')) { menu.classList.remove('hidden'); overlay.classList.remove('hidden'); icon.classList.add('rotate-45'); }
+            else { menu.classList.add('hidden'); overlay.classList.add('hidden'); icon.classList.remove('rotate-45'); }
+        }
+        function openImageModal(url) { document.getElementById('modal-image').src = url; document.getElementById('modal-download').href = url; document.getElementById('image-modal').classList.remove('hidden'); }
+        function closeImageModal() { document.getElementById('image-modal').classList.add('hidden'); }
+        function autoResize(el) { el.style.height = 'auto'; el.style.height = el.scrollHeight + 'px'; }
+        function scrollToBottom() { const b = document.getElementById('chat-box'); b.scrollTop = b.scrollHeight; }
+        function getTime() { return new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}); }
+        function linkify(t) { return t.replace(/(https?:\/\/[^\s]+)/g, url => `<a href="${url}" target="_blank" class="text-blue-300 underline">${url}</a>`); }
+        function updateMyName() { myName = document.getElementById('my-name-input').value; localStorage.setItem('uchat_name', myName); }
+        function copyId() { navigator.clipboard.writeText(document.getElementById('my-id').innerText); showToast("Copied ID!", "success"); }
+        function formatBytes(bytes) { if(bytes===0) return '0 B'; const i = Math.floor(Math.log(bytes)/Math.log(1024)); return parseFloat((bytes/Math.pow(1024, i)).toFixed(2)) + ' ' + ['B','KB','MB','GB'][i]; }
+        function handleTyping() { } // Simplified
+        function showToast(msg, type) {
+            const colors = { error: 'bg-red-500/90 text-white', success: 'bg-green-600/90 text-white', info: 'bg-blue-600/90 text-white', warning: 'bg-yellow-600/90 text-white' };
+            const t = document.createElement('div');
+            t.className = `px-4 py-3 rounded-xl border backdrop-blur-md text-sm font-medium shadow-2xl mb-2 animate-fade-in flex items-center gap-2 ${colors[type] || colors.info}`;
+            t.innerHTML = msg;
+            document.getElementById('toast-container').appendChild(t);
+            setTimeout(() => t.remove(), 3000);
+        }
+    </script>
+</body>
+</html>
