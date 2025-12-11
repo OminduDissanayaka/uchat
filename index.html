@@ -504,6 +504,11 @@
                             showToast(`Joined ${data.name}`, "success");
                             document.getElementById('btn-join').innerHTML = '<i class="fas fa-sign-in-alt mb-1"></i><span class="text-[10px]">JOIN HOST</span>';
                         }
+                        
+                        // New Logic to update header name in Direct Mode
+                        if (myMode === 'direct') {
+                            document.getElementById('header-title').innerText = data.name;
+                        }
                     } else if (data.sub === 'peer-list') {
                         if(myMode === 'client-room') connectToPeersForVideo(data.peers);
                     }
