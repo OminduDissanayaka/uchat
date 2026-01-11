@@ -2342,6 +2342,228 @@
                     </div>
                 </div>
 
+                <!-- 🎤 CALL & MEDIA SETTINGS -->
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2 px-1">
+                        <p class="text-[10px] font-bold" style="color: var(--color-text-secondary)">🎤 CALL & MEDIA</p>
+                        <span class="px-2 py-0.5 rounded-full text-[8px] font-bold" style="background: linear-gradient(135deg, #f59e0b, #ea580c); color: white">NEW</span>
+                    </div>
+                    
+                    <!-- Auto-Accept Calls -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-phone-volume" style="color: #22c55e"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Auto-Accept Calls</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Accept calls from friends automatically</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-auto-accept-calls" class="sr-only peer" onchange="updateCallSetting('autoAcceptCalls', this.checked)">
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Ringtone Volume -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="fas fa-volume-up" style="color: #3b82f6"></i>
+                            <div>
+                                <p class="text-xs font-medium" style="color: var(--color-text-primary)">Ringtone Volume</p>
+                                <p class="text-[9px]" style="color: var(--color-text-secondary)">Adjust incoming call volume</p>
+                            </div>
+                        </div>
+                        <input type="range" id="setting-ringtone-volume" min="0" max="100" value="80" onchange="updateCallSetting('ringtoneVolume', this.value)" class="w-full h-2 rounded-lg appearance-none cursor-pointer" style="background: var(--color-border)">
+                    </div>
+                    
+                    <!-- Vibration on Call -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-mobile-alt" style="color: #ec4899"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Vibrate on Call</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Vibrate when receiving calls</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-vibrate-call" class="sr-only peer" onchange="updateCallSetting('vibrateOnCall', this.checked)" checked>
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-pink-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Echo Cancellation Level -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="fas fa-headphones" style="color: #8b5cf6"></i>
+                            <div>
+                                <p class="text-xs font-medium" style="color: var(--color-text-primary)">Audio Quality</p>
+                                <p class="text-[9px]" style="color: var(--color-text-secondary)">Choose audio processing level</p>
+                            </div>
+                        </div>
+                        <select id="setting-audio-quality" onchange="updateCallSetting('audioQuality', this.value)" class="w-full p-2 rounded-lg text-xs focus:outline-none" style="background: var(--color-dark); color: var(--color-text-primary); border: 1px solid var(--color-border)">
+                            <option value="standard">Standard (Balanced)</option>
+                            <option value="hd">HD Audio (Higher Quality)</option>
+                            <option value="low">Low Bandwidth (Save Data)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 💾 DATA & STORAGE -->
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2 px-1">
+                        <p class="text-[10px] font-bold" style="color: var(--color-text-secondary)">💾 DATA & STORAGE</p>
+                    </div>
+                    
+                    <!-- Auto-Download Media -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-download" style="color: #06b6d4"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Auto-Download Media</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Download images/files automatically</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-auto-download" class="sr-only peer" onchange="updateDataSetting('autoDownload', this.checked)" checked>
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Save Messages Locally -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-database" style="color: #f59e0b"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Save Chat History</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Keep messages for next session</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-save-history" class="sr-only peer" onchange="updateDataSetting('saveHistory', this.checked)">
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Clear All Data Button -->
+                    <button onclick="clearAllChatData()" class="w-full p-3 rounded-xl flex items-center justify-center gap-2 transition hover:opacity-80" style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); color: #f87171">
+                        <i class="fas fa-trash-alt"></i>
+                        <span class="text-xs font-medium">Clear All Chat Data</span>
+                    </button>
+                </div>
+                
+                <!-- 🔔 NOTIFICATIONS -->
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2 px-1">
+                        <p class="text-[10px] font-bold" style="color: var(--color-text-secondary)">🔔 NOTIFICATIONS</p>
+                    </div>
+                    
+                    <!-- Message Sound -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-bell" style="color: #22c55e"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Message Sound</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Play sound on new messages</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-msg-sound" class="sr-only peer" onchange="updateNotificationSetting('messageSound', this.checked)" checked>
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Desktop Notifications -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-desktop" style="color: #3b82f6"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Desktop Notifications</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Show system notifications</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-desktop-notif" class="sr-only peer" onchange="updateNotificationSetting('desktopNotification', this.checked)" checked>
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Show Message Preview -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-comment-alt" style="color: #a855f7"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Message Preview</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Show message content in notifications</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-msg-preview" class="sr-only peer" onchange="updateNotificationSetting('messagePreview', this.checked)" checked>
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- ⚙️ ADVANCED -->
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2 px-1">
+                        <p class="text-[10px] font-bold" style="color: var(--color-text-secondary)">⚙️ ADVANCED</p>
+                    </div>
+                    
+                    <!-- Connection Quality Display -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-signal" style="color: #10b981"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Show Connection Quality</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Display network quality indicator</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-show-quality" class="sr-only peer" onchange="updateAdvancedSetting('showConnectionQuality', this.checked)" checked>
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-emerald-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Debug Mode -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-bug" style="color: #ef4444"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Debug Mode</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Show detailed logs in console</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-debug-mode" class="sr-only peer" onchange="updateAdvancedSetting('debugMode', this.checked)">
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Chat Data -->
+                    <button onclick="exportChatData()" class="w-full p-3 rounded-xl flex items-center justify-center gap-2 transition hover:opacity-80" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #60a5fa">
+                        <i class="fas fa-file-export"></i>
+                        <span class="text-xs font-medium">Export Chat Data</span>
+                    </button>
+                </div>
+
                 <!-- Info -->
                 <div class="p-3 rounded-xl flex items-start gap-3" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3)">
                     <i class="fas fa-info-circle text-blue-400 mt-0.5"></i>
@@ -4383,15 +4605,25 @@
                 // Start voice activity visualization
                 startVoiceVisualization(stream);
 
-                // Call existing peers with optimized settings
+                // Call existing peers with optimized settings and VIDEO metadata
                 if(!isHost && hostConn && myMode === 'client-room') {
                     const call = peer.call(hostConn.peer, localStream, {
+                        metadata: {
+                            callType: 'video',
+                            video: true,
+                            name: myName
+                        },
                         sdpTransform: optimizeSDP
                     });
                     handleCall(call);
                 }
                 if(myMode === 'direct' && connections.length > 0) {
                     const call = peer.call(connections[0].peer, localStream, {
+                        metadata: {
+                            callType: 'video',
+                            video: true,
+                            name: myName
+                        },
                         sdpTransform: optimizeSDP
                     });
                     handleCall(call);
@@ -4750,29 +4982,38 @@
         }
         
         // Incoming Call Actions
-        function acceptIncomingCall() {
+        async function acceptIncomingCall() {
             if (!incomingCallData) return;
+            
+            const callType = incomingCallData.callType || 'video';
+            console.log('[Call] Accepting call type:', callType);
             
             hideIncomingCallScreen();
             
-            // Answer the pending PeerJS call
-            if (window.pendingIncomingCall) {
-                answerPendingCall();
+            // Send acceptance message to peer
+            if (connections.length > 0) {
+                broadcastData({ type: 'call-accepted', callType: callType, peerId: peer.id });
             }
             
             // Accept based on call type
-            if (incomingCallData.callType === 'video') {
+            if (callType === 'video') {
+                currentCallType = 'video';
                 // Start video and show video call screen
                 showVideoCallScreen(incomingCallData.name, null, null);
-                startLocalVideo().then(() => {
-                    if (localStream) {
-                        document.getElementById('video-call-local').srcObject = localStream;
-                    }
-                });
+                await startLocalVideo();
+                if (localStream) {
+                    const localVid = document.getElementById('video-call-local');
+                    if (localVid) localVid.srcObject = localStream;
+                }
             } else {
-                // Start voice call
-                showVoiceCallScreen(incomingCallData.name, 'connected');
-                startVoiceOnlyStream();
+                currentCallType = 'voice';
+                // Show voice call screen
+                showVoiceCallScreen(incomingCallData.name, 'connecting');
+            }
+            
+            // Answer the pending PeerJS call with our stream
+            if (window.pendingIncomingCall) {
+                await answerPendingCall();
             }
         }
         
@@ -4884,12 +5125,18 @@
                 document.getElementById('media-controls').classList.remove('hidden');
                 updateMediaIcons(true, false, false);
                 
-                // Call the peer with audio only
+                // Call the peer with audio only - include metadata to indicate voice call
                 if(connections.length > 0) {
                     const call = peer.call(connections[0].peer, localStream, {
+                        metadata: {
+                            callType: 'voice',
+                            audioOnly: true,
+                            video: false,
+                            name: myName
+                        },
                         sdpTransform: optimizeSDP
                     });
-                    handleCall(call);
+                    handleVoiceCall(call);
                 }
                 
                 // Update call screen to connected
@@ -5072,11 +5319,24 @@
             // Get caller info from participants or connection metadata
             const callerInfo = participants[call.peer];
             const callerName = callerInfo?.name || connectedPeerName || call.peer.substring(0, 8);
-            const hasVideo = call.metadata?.video !== false;
+            
+            // Properly detect call type from metadata
+            // callType can be 'voice' or 'video', default to voice if audio-only stream
+            let callType = call.metadata?.callType || 'video';
+            
+            // Also check if it's explicitly marked as voice-only
+            if (call.metadata?.video === false || call.metadata?.audioOnly === true) {
+                callType = 'voice';
+            }
+            
+            console.log('[Call] Incoming call type:', callType, 'from:', callerName);
+            
+            // Store the call type for later use
+            window.pendingCallType = callType;
             
             // Show WhatsApp-style incoming call screen
             showIncomingCallScreen({
-                callType: hasVideo ? 'video' : 'voice',
+                callType: callType,
                 name: callerName,
                 peerId: call.peer,
                 call: call // Store call object to answer later
@@ -5087,24 +5347,110 @@
         }
         
         // Answer pending incoming call
-        function answerPendingCall() {
+        async function answerPendingCall() {
             const call = window.pendingIncomingCall;
             if (!call) return;
             
+            const callType = window.pendingCallType || 'video';
+            
             if (myMode.includes('room') || myMode === 'direct' || myMode === 'idle') {
-                setVideoLayout(true);
                 myMode = myMode === 'idle' ? 'direct' : myMode;
                 updateUIForMode(myMode);
                 
-                if(!localStream) { 
-                    call.answer(); 
-                    handleCall(call); 
-                } else { 
-                    call.answer(localStream); 
-                    handleCall(call); 
+                try {
+                    // IMPORTANT: Always get local audio/video stream before answering
+                    // This ensures two-way audio communication
+                    if (callType === 'voice') {
+                        // Voice call - get audio only
+                        if (!localStream) {
+                            localStream = await navigator.mediaDevices.getUserMedia({
+                                video: false,
+                                audio: {
+                                    echoCancellation: true,
+                                    noiseSuppression: true,
+                                    autoGainControl: true
+                                }
+                            });
+                        }
+                        // Answer with our audio stream
+                        call.answer(localStream);
+                        handleVoiceCall(call);
+                    } else {
+                        // Video call - get video and audio
+                        setVideoLayout(true);
+                        if (!localStream) {
+                            localStream = await navigator.mediaDevices.getUserMedia({
+                                video: true,
+                                audio: {
+                                    echoCancellation: true,
+                                    noiseSuppression: true,
+                                    autoGainControl: true
+                                }
+                            });
+                        }
+                        // Answer with our video+audio stream
+                        call.answer(localStream);
+                        handleCall(call);
+                    }
+                } catch (e) {
+                    console.error('[Call] Failed to get media stream:', e);
+                    // Answer without stream as fallback (one-way audio)
+                    call.answer();
+                    if (callType === 'voice') {
+                        handleVoiceCall(call);
+                    } else {
+                        handleCall(call);
+                    }
+                    showToast("Microphone access denied - one-way audio only", "warning");
                 }
             }
             window.pendingIncomingCall = null;
+            window.pendingCallType = null;
+        }
+        
+        // Handle voice-only calls with proper audio element
+        function handleVoiceCall(call) {
+            calls.push(call);
+            peerCalls[call.peer] = call;
+            
+            call.on('stream', (remoteStream) => {
+                console.log('[Voice Call] Remote stream received, audio tracks:', remoteStream.getAudioTracks().length);
+                
+                // Create or get audio element for voice call
+                let audioElement = document.getElementById('voice-call-audio');
+                if (!audioElement) {
+                    audioElement = document.createElement('audio');
+                    audioElement.id = 'voice-call-audio';
+                    audioElement.autoplay = true;
+                    audioElement.playsInline = true;
+                    document.body.appendChild(audioElement);
+                }
+                
+                // Set remote audio stream
+                audioElement.srcObject = remoteStream;
+                audioElement.play().catch(e => console.log('[Voice Call] Autoplay blocked:', e));
+                
+                // Update voice call screen
+                showVoiceCallScreen(connectedPeerName || 'Peer', 'connected');
+                
+                showToast("Voice call connected", "success");
+            });
+            
+            call.on('close', () => {
+                calls = calls.filter(c => c.peer !== call.peer);
+                delete peerCalls[call.peer];
+                
+                // Remove audio element
+                const audioElement = document.getElementById('voice-call-audio');
+                if (audioElement) {
+                    audioElement.srcObject = null;
+                    audioElement.remove();
+                }
+            });
+            
+            call.on('error', (err) => {
+                console.error('[Voice Call] Error:', err);
+            });
         }
         
         function handleCall(call) {
@@ -6825,6 +7171,191 @@
         
         // Initialize secret mode on load
         setTimeout(loadSecretModeSettings, 100);
+        
+        // === NEW SETTINGS FUNCTIONS ===
+        
+        // Call Settings
+        let callSettings = {
+            autoAcceptCalls: localStorage.getItem('uchat_auto_accept_calls') === 'true',
+            ringtoneVolume: parseInt(localStorage.getItem('uchat_ringtone_volume') || '80'),
+            vibrateOnCall: localStorage.getItem('uchat_vibrate_call') !== 'false',
+            audioQuality: localStorage.getItem('uchat_audio_quality') || 'standard'
+        };
+        
+        function updateCallSetting(setting, value) {
+            callSettings[setting] = value;
+            localStorage.setItem(`uchat_${setting.replace(/([A-Z])/g, '_$1').toLowerCase()}`, value.toString());
+            
+            const names = {
+                autoAcceptCalls: 'Auto-Accept Calls',
+                ringtoneVolume: 'Ringtone Volume',
+                vibrateOnCall: 'Vibrate on Call',
+                audioQuality: 'Audio Quality'
+            };
+            
+            if (setting === 'ringtoneVolume') {
+                showToast(`Volume: ${value}%`, 'success');
+            } else if (setting === 'audioQuality') {
+                showToast(`Audio: ${value.charAt(0).toUpperCase() + value.slice(1)}`, 'success');
+            } else {
+                showToast(`${names[setting]}: ${value ? 'Enabled' : 'Disabled'}`, 'success');
+            }
+        }
+        
+        // Data & Storage Settings
+        let dataSettings = {
+            autoDownload: localStorage.getItem('uchat_auto_download') !== 'false',
+            saveHistory: localStorage.getItem('uchat_save_history') === 'true'
+        };
+        
+        function updateDataSetting(setting, value) {
+            dataSettings[setting] = value;
+            localStorage.setItem(`uchat_${setting.replace(/([A-Z])/g, '_$1').toLowerCase()}`, value.toString());
+            
+            const names = {
+                autoDownload: 'Auto-Download Media',
+                saveHistory: 'Save Chat History'
+            };
+            
+            showToast(`${names[setting]}: ${value ? 'Enabled' : 'Disabled'}`, 'success');
+        }
+        
+        function clearAllChatData() {
+            showCustomConfirm("Clear All Data?", "This will delete all chat history, files, and settings. This cannot be undone.", () => {
+                // Clear message history
+                messageHistory = [];
+                
+                // Clear chat box
+                const chatBox = document.getElementById('chat-box');
+                chatBox.innerHTML = `
+                    <div class="flex flex-col items-center justify-center h-full text-center p-8">
+                        <div class="w-20 h-20 rounded-full flex items-center justify-center mb-4" style="background: linear-gradient(135deg, var(--color-primary), var(--color-accent))">
+                            <i class="fas fa-comments text-white text-3xl"></i>
+                        </div>
+                        <h3 class="text-lg font-bold mb-2" style="color: var(--color-text-primary)">No Messages Yet</h3>
+                        <p class="text-sm" style="color: var(--color-text-secondary)">Messages will appear here</p>
+                    </div>`;
+                
+                // Clear relevant localStorage items
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key && key.startsWith('uchat_chat_') || key.startsWith('uchat_file_')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+                
+                showToast("All chat data cleared!", "success");
+            });
+        }
+        
+        // Notification Settings
+        let notificationSettings = {
+            messageSound: localStorage.getItem('uchat_msg_sound') !== 'false',
+            desktopNotification: localStorage.getItem('uchat_desktop_notif') !== 'false',
+            messagePreview: localStorage.getItem('uchat_msg_preview') !== 'false'
+        };
+        
+        function updateNotificationSetting(setting, value) {
+            notificationSettings[setting] = value;
+            localStorage.setItem(`uchat_${setting.replace(/([A-Z])/g, '_$1').toLowerCase()}`, value.toString());
+            
+            const names = {
+                messageSound: 'Message Sound',
+                desktopNotification: 'Desktop Notifications',
+                messagePreview: 'Message Preview'
+            };
+            
+            // Request notification permission if enabling
+            if (setting === 'desktopNotification' && value && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+            
+            showToast(`${names[setting]}: ${value ? 'Enabled' : 'Disabled'}`, 'success');
+        }
+        
+        // Advanced Settings
+        let advancedSettings = {
+            showConnectionQuality: localStorage.getItem('uchat_show_quality') !== 'false',
+            debugMode: localStorage.getItem('uchat_debug_mode') === 'true'
+        };
+        
+        function updateAdvancedSetting(setting, value) {
+            advancedSettings[setting] = value;
+            localStorage.setItem(`uchat_${setting.replace(/([A-Z])/g, '_$1').toLowerCase()}`, value.toString());
+            
+            const names = {
+                showConnectionQuality: 'Connection Quality',
+                debugMode: 'Debug Mode'
+            };
+            
+            showToast(`${names[setting]}: ${value ? 'Enabled' : 'Disabled'}`, 'success');
+        }
+        
+        function exportChatData() {
+            const exportData = {
+                exportDate: new Date().toISOString(),
+                messageHistory: messageHistory,
+                settings: {
+                    callSettings,
+                    dataSettings,
+                    notificationSettings,
+                    advancedSettings,
+                    privacySettings
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `uchat-export-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            showToast("Chat data exported!", "success");
+        }
+        
+        // Load all settings on startup
+        function loadAllSettings() {
+            // Load Call Settings UI
+            const autoAccept = document.getElementById('setting-auto-accept-calls');
+            const ringtoneVol = document.getElementById('setting-ringtone-volume');
+            const vibrateCall = document.getElementById('setting-vibrate-call');
+            const audioQuality = document.getElementById('setting-audio-quality');
+            
+            if (autoAccept) autoAccept.checked = callSettings.autoAcceptCalls;
+            if (ringtoneVol) ringtoneVol.value = callSettings.ringtoneVolume;
+            if (vibrateCall) vibrateCall.checked = callSettings.vibrateOnCall;
+            if (audioQuality) audioQuality.value = callSettings.audioQuality;
+            
+            // Load Data Settings UI
+            const autoDownload = document.getElementById('setting-auto-download');
+            const saveHistory = document.getElementById('setting-save-history');
+            
+            if (autoDownload) autoDownload.checked = dataSettings.autoDownload;
+            if (saveHistory) saveHistory.checked = dataSettings.saveHistory;
+            
+            // Load Notification Settings UI
+            const msgSound = document.getElementById('setting-msg-sound');
+            const desktopNotif = document.getElementById('setting-desktop-notif');
+            const msgPreview = document.getElementById('setting-msg-preview');
+            
+            if (msgSound) msgSound.checked = notificationSettings.messageSound;
+            if (desktopNotif) desktopNotif.checked = notificationSettings.desktopNotification;
+            if (msgPreview) msgPreview.checked = notificationSettings.messagePreview;
+            
+            // Load Advanced Settings UI
+            const showQuality = document.getElementById('setting-show-quality');
+            const debugMode = document.getElementById('setting-debug-mode');
+            
+            if (showQuality) showQuality.checked = advancedSettings.showConnectionQuality;
+            if (debugMode) debugMode.checked = advancedSettings.debugMode;
+        }
+        
+        // Initialize settings on page load
+        setTimeout(loadAllSettings, 200);
         
         function resetPrivacySettings() {
             showCustomConfirm("Reset Privacy Settings?", "All privacy settings will be restored to defaults.", () => {
