@@ -31,6 +31,7 @@
     
     <!-- PWA & Mobile -->
     <meta name="theme-color" content="#6366f1">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="UChat">
@@ -205,6 +206,91 @@
             --color-border: rgba(244, 63, 94, 0.2);
             --gradient-bg: linear-gradient(135deg, #0f0a0b 0%, #1f1315 50%, #3f1219 100%);
             --theme-name: 'Coral Sunset';
+        }
+
+        /* 6. Ocean Blue - Deep Sea Theme */
+        [data-theme="ocean"] {
+            --color-dark: #0c1929;
+            --color-darker: #060d16;
+            --color-primary: #0ea5e9;
+            --color-secondary: #164e63;
+            --color-accent: #38bdf8;
+            --color-incoming: #0c4a6e;
+            --color-outgoing: #0284c7;
+            --color-surface: #0e3a52;
+            --color-text-primary: #f0f9ff;
+            --color-text-secondary: #7dd3fc;
+            --color-border: rgba(14, 165, 233, 0.2);
+            --gradient-bg: linear-gradient(135deg, #060d16 0%, #0c1929 50%, #0c4a6e 100%);
+            --theme-name: 'Ocean Blue';
+        }
+
+        /* 7. Rose Gold - Romantic Theme */
+        [data-theme="rose"] {
+            --color-dark: #1a1118;
+            --color-darker: #0d080b;
+            --color-primary: #ec4899;
+            --color-secondary: #500724;
+            --color-accent: #f472b6;
+            --color-incoming: #831843;
+            --color-outgoing: #db2777;
+            --color-surface: #4a0d29;
+            --color-text-primary: #fdf2f8;
+            --color-text-secondary: #fbcfe8;
+            --color-border: rgba(236, 72, 153, 0.2);
+            --gradient-bg: linear-gradient(135deg, #0d080b 0%, #1a1118 50%, #500724 100%);
+            --theme-name: 'Rose Gold';
+        }
+
+        /* 8. Stealth Black - Ultimate Privacy Theme */
+        [data-theme="stealth"] {
+            --color-dark: #000000;
+            --color-darker: #000000;
+            --color-primary: #171717;
+            --color-secondary: #0a0a0a;
+            --color-accent: #262626;
+            --color-incoming: #0a0a0a;
+            --color-outgoing: #171717;
+            --color-surface: #0a0a0a;
+            --color-text-primary: #a3a3a3;
+            --color-text-secondary: #525252;
+            --color-border: rgba(38, 38, 38, 0.5);
+            --gradient-bg: linear-gradient(135deg, #000000 0%, #0a0a0a 50%, #0a0a0a 100%);
+            --theme-name: 'Stealth Black';
+        }
+
+        /* 9. Forest Night - Nature Theme */
+        [data-theme="forest"] {
+            --color-dark: #0c1a0e;
+            --color-darker: #050d06;
+            --color-primary: #22c55e;
+            --color-secondary: #14532d;
+            --color-accent: #4ade80;
+            --color-incoming: #166534;
+            --color-outgoing: #16a34a;
+            --color-surface: #14532d;
+            --color-text-primary: #f0fdf4;
+            --color-text-secondary: #86efac;
+            --color-border: rgba(34, 197, 94, 0.2);
+            --gradient-bg: linear-gradient(135deg, #050d06 0%, #0c1a0e 50%, #14532d 100%);
+            --theme-name: 'Forest Night';
+        }
+
+        /* 10. Amber Glow - Warm Dark Theme */
+        [data-theme="amber"] {
+            --color-dark: #1a1408;
+            --color-darker: #0d0a04;
+            --color-primary: #f59e0b;
+            --color-secondary: #78350f;
+            --color-accent: #fbbf24;
+            --color-incoming: #92400e;
+            --color-outgoing: #d97706;
+            --color-surface: #451a03;
+            --color-text-primary: #fffbeb;
+            --color-text-secondary: #fde68a;
+            --color-border: rgba(245, 158, 11, 0.2);
+            --gradient-bg: linear-gradient(135deg, #0d0a04 0%, #1a1408 50%, #78350f 100%);
+            --theme-name: 'Amber Glow';
         }
 
         * { box-sizing: border-box; }
@@ -2129,6 +2215,133 @@
                     </div>
                 </div>
 
+                <!-- SECRET MODE - Privacy for Secret Relationships -->
+                <div class="space-y-2">
+                    <div class="flex items-center gap-2 px-1">
+                        <p class="text-[10px] font-bold" style="color: var(--color-text-secondary)">🤫 SECRET MODE</p>
+                        <span class="px-2 py-0.5 rounded-full text-[8px] font-bold" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); color: white">STEALTH</span>
+                    </div>
+                    
+                    <!-- Panic Button -->
+                    <div class="p-3 rounded-xl" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1)); border: 1px solid rgba(239, 68, 68, 0.3)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-exclamation-triangle text-red-500"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Panic Button</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Triple-tap screen to instantly hide app</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-panic-btn" class="sr-only peer" onchange="updateSecretMode('panicButton', this.checked)">
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-red-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Fake Calculator Screen -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-calculator" style="color: #f59e0b"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Fake Calculator Cover</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Show calculator when panic triggered</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-fake-calc" class="sr-only peer" onchange="updateSecretMode('fakeCalculator', this.checked)">
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Hide Notifications -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-bell-slash" style="color: #8b5cf6"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Silent Notifications</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">No sound, no popup, no preview</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-silent-notif" class="sr-only peer" onchange="updateSecretMode('silentNotifications', this.checked)">
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Auto Lock Timer -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="fas fa-lock-clock" style="color: #10b981"></i>
+                            <div>
+                                <p class="text-xs font-medium" style="color: var(--color-text-primary)">Auto-Lock App</p>
+                                <p class="text-[9px]" style="color: var(--color-text-secondary)">Lock app after inactivity</p>
+                            </div>
+                        </div>
+                        <select id="setting-auto-lock" onchange="updateSecretMode('autoLock', this.value)" class="w-full p-2 rounded-lg text-xs focus:outline-none" style="background: var(--color-dark); color: var(--color-text-primary); border: 1px solid var(--color-border)">
+                            <option value="never">Never</option>
+                            <option value="30s">After 30 Seconds</option>
+                            <option value="1m">After 1 Minute</option>
+                            <option value="5m">After 5 Minutes</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Hide from Recent Apps -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-ghost" style="color: #06b6d4"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Ghost Mode</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Blank preview in recent apps</p>
+                                </div>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" id="setting-ghost-mode" class="sr-only peer" onchange="updateSecretMode('ghostMode', this.checked)">
+                                <div class="w-10 h-5 bg-gray-600 rounded-full peer peer-checked:after:translate-x-5 after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-cyan-500"></div>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <!-- Secret PIN -->
+                    <div class="p-3 rounded-xl" style="background: var(--color-surface); border: 1px solid var(--color-border)">
+                        <div class="flex items-center gap-3 mb-2">
+                            <i class="fas fa-key" style="color: #f43f5e"></i>
+                            <div>
+                                <p class="text-xs font-medium" style="color: var(--color-text-primary)">Secret PIN Lock</p>
+                                <p class="text-[9px]" style="color: var(--color-text-secondary)">Set a PIN to access the app</p>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <input type="password" id="setting-secret-pin" maxlength="6" placeholder="Enter 4-6 digit PIN" class="flex-1 p-2 rounded-lg text-xs focus:outline-none" style="background: var(--color-dark); color: var(--color-text-primary); border: 1px solid var(--color-border)">
+                            <button onclick="setSecretPin()" class="px-3 py-2 rounded-lg text-xs font-medium text-white" style="background: var(--color-primary)">Set</button>
+                        </div>
+                    </div>
+                    
+                    <!-- Quick Exit Trigger -->
+                    <div class="p-3 rounded-xl" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(168, 85, 247, 0.1)); border: 1px solid rgba(139, 92, 246, 0.3)">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-hand-pointer" style="color: #a855f7"></i>
+                                <div>
+                                    <p class="text-xs font-medium" style="color: var(--color-text-primary)">Quick Exit Gesture</p>
+                                    <p class="text-[9px]" style="color: var(--color-text-secondary)">Choose how to trigger panic exit</p>
+                                </div>
+                            </div>
+                        </div>
+                        <select id="setting-panic-gesture" onchange="updateSecretMode('panicGesture', this.value)" class="w-full p-2 rounded-lg text-xs focus:outline-none" style="background: var(--color-dark); color: var(--color-text-primary); border: 1px solid var(--color-border)">
+                            <option value="triple-tap">Triple Tap Screen</option>
+                            <option value="shake">Shake Device</option>
+                            <option value="volume-down">Volume Down x3</option>
+                            <option value="swipe-down">Swipe Down Twice</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- Info -->
                 <div class="p-3 rounded-xl flex items-start gap-3" style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3)">
                     <i class="fas fa-info-circle text-blue-400 mt-0.5"></i>
@@ -2181,13 +2394,20 @@
 
         <!-- Theme Selector -->
         <div id="theme-selector" class="hidden p-4 border-b animate-fade-in" style="border-color: var(--color-border); background: var(--color-surface)">
-            <label class="text-[10px] font-bold mb-3 block" style="color: var(--color-text-secondary)">SELECT THEME</label>
-            <div class="flex items-center justify-between gap-2">
+            <label class="text-[10px] font-bold mb-3 block" style="color: var(--color-text-secondary)">SELECT THEME (10 THEMES)</label>
+            <div class="grid grid-cols-5 gap-2 mb-2">
                 <button onclick="setTheme('midnight')" class="theme-btn" style="background: linear-gradient(135deg, #3b82f6, #1e40af)" title="Midnight Blue"></button>
                 <button onclick="setTheme('pearl')" class="theme-btn" style="background: linear-gradient(135deg, #f8fafc, #e2e8f0)" title="Pearl White"></button>
                 <button onclick="setTheme('emerald')" class="theme-btn" style="background: linear-gradient(135deg, #10b981, #059669)" title="Emerald Pro"></button>
                 <button onclick="setTheme('royal')" class="theme-btn" style="background: linear-gradient(135deg, #8b5cf6, #7c3aed)" title="Royal Purple"></button>
                 <button onclick="setTheme('coral')" class="theme-btn" style="background: linear-gradient(135deg, #f43f5e, #e11d48)" title="Coral Sunset"></button>
+            </div>
+            <div class="grid grid-cols-5 gap-2">
+                <button onclick="setTheme('ocean')" class="theme-btn" style="background: linear-gradient(135deg, #0ea5e9, #0284c7)" title="Ocean Blue"></button>
+                <button onclick="setTheme('rose')" class="theme-btn" style="background: linear-gradient(135deg, #ec4899, #db2777)" title="Rose Gold"></button>
+                <button onclick="setTheme('stealth')" class="theme-btn" style="background: linear-gradient(135deg, #171717, #000000)" title="Stealth Black"></button>
+                <button onclick="setTheme('forest')" class="theme-btn" style="background: linear-gradient(135deg, #22c55e, #16a34a)" title="Forest Night"></button>
+                <button onclick="setTheme('amber')" class="theme-btn" style="background: linear-gradient(135deg, #f59e0b, #d97706)" title="Amber Glow"></button>
             </div>
             <p class="text-[10px] text-center mt-2" style="color: var(--color-text-secondary)" id="theme-name-display">Current: Midnight Blue</p>
         </div>
@@ -2553,11 +2773,11 @@
                     </div>
                 </div>
 
-                <button id="btn-record-toggle" onclick="startRecording()" class="w-10 h-10 md:w-11 md:h-11 rounded-full transition-all hover:scale-105 shadow-lg flex-shrink-0 flex items-center justify-center" style="background: var(--color-surface); color: var(--color-text-secondary); border: 1px solid var(--color-border)" title="Voice Message">
-                    <i class="fas fa-microphone"></i>
+                <button id="btn-record-toggle" onclick="startRecording()" class="w-9 h-9 md:w-11 md:h-11 rounded-full transition-all hover:scale-105 shadow-lg flex-shrink-0 flex items-center justify-center" style="background: var(--color-surface); color: var(--color-text-secondary); border: 1px solid var(--color-border)" title="Voice Message">
+                    <i class="fas fa-microphone text-sm md:text-base"></i>
                 </button>
-                <button id="btn-send-text" onclick="sendMessage()" class="w-10 h-10 md:w-11 md:h-11 rounded-full text-white transition-all hover:scale-105 shadow-lg flex-shrink-0 flex items-center justify-center" style="background: var(--color-primary)" title="Send Message">
-                    <i class="fas fa-paper-plane"></i>
+                <button id="btn-send-text" onclick="sendMessage()" class="w-9 h-9 md:w-11 md:h-11 rounded-full text-white transition-all hover:scale-105 shadow-lg flex-shrink-0 flex items-center justify-center" style="background: var(--color-primary)" title="Send Message">
+                    <i class="fas fa-paper-plane text-sm md:text-base"></i>
                 </button>
             </div>
         </div>
@@ -2569,26 +2789,35 @@
         const LINK_PREVIEW_API = 'https://api.linkpreview.net'; // Free tier available
         const TENOR_API_KEY = 'AIzaSyAyimkuYQYF_FXVALexPuGQctUWRURdCYQ'; // Free Tenor API
         
-        // STUN/TURN Servers for Firewall Bypass
+        // STUN/TURN Servers for Firewall Bypass - Optimized for Low Latency
         const ICE_SERVERS = [
+            // Google STUN servers (fastest, most reliable)
             { urls: 'stun:stun.l.google.com:19302' },
             { urls: 'stun:stun1.l.google.com:19302' },
             { urls: 'stun:stun2.l.google.com:19302' },
-            { urls: 'stun:stun3.l.google.com:19302' },
-            { urls: 'stun:stun4.l.google.com:19302' },
-            { urls: 'stun:stun.stunprotocol.org:3478' },
-            { urls: 'stun:stun.voip.blackberry.com:3478' },
+            // Additional reliable STUN servers
             { urls: 'stun:stun.services.mozilla.com' },
-            { urls: 'stun:stun.ekiga.net' },
-            { urls: 'stun:stun.ideasip.com' },
-            { urls: 'stun:stun.schlund.de' },
-            { urls: 'stun:stun.voipbuster.com' },
-            { urls: 'stun:stun.voipstunt.com' },
-            // Free TURN servers (for symmetric NAT bypass)
+            { urls: 'stun:global.stun.twilio.com:3478' },
+            // Free TURN servers (for symmetric NAT bypass - critical for mobile)
             { urls: 'turn:openrelay.metered.ca:80', username: 'openrelayproject', credential: 'openrelayproject' },
             { urls: 'turn:openrelay.metered.ca:443', username: 'openrelayproject', credential: 'openrelayproject' },
-            { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' }
+            { urls: 'turn:openrelay.metered.ca:443?transport=tcp', username: 'openrelayproject', credential: 'openrelayproject' },
+            // Additional TURN for redundancy
+            { urls: 'turn:relay1.expressturn.com:3478', username: 'efUSZBCUJNGJK45BPT', credential: 'VLGdLzIHRoI8cKx9' },
+            { urls: 'turn:numb.viagenie.ca', username: 'webrtc@live.com', credential: 'muazkh' },
+            { urls: 'turn:turn.anyfirewall.com:443?transport=tcp', username: 'webrtc', credential: 'webrtc' }
         ];
+        
+        // === LATENCY OPTIMIZATION SETTINGS ===
+        const LATENCY_CONFIG = {
+            messageQueueFlushInterval: 50, // Flush message queue every 50ms
+            heartbeatInterval: 15000, // Connection heartbeat every 15s
+            reconnectBaseDelay: 500, // Start reconnect at 500ms
+            reconnectMaxDelay: 5000, // Max reconnect delay 5s
+            connectionTimeout: 10000, // Connection timeout 10s
+            dataChannelBufferedAmountLowThreshold: 65536, // 64KB buffer threshold
+            iceGatheringTimeout: 5000 // ICE gathering timeout 5s
+        };
 
         // Video Quality Presets
         const VIDEO_QUALITY = {
@@ -2644,13 +2873,18 @@
             hideLastSeen: localStorage.getItem('uchat_hide_lastseen') === 'true' // Hide last seen time
         };
         
-        // Theme names mapping
+        // Theme names mapping - 10 Professional Themes
         const THEME_NAMES = {
             'midnight': 'Midnight Blue',
             'pearl': 'Pearl White',
             'emerald': 'Emerald Pro',
             'royal': 'Royal Purple',
-            'coral': 'Coral Sunset'
+            'coral': 'Coral Sunset',
+            'ocean': 'Ocean Blue',
+            'rose': 'Rose Gold',
+            'stealth': 'Stealth Black',
+            'forest': 'Forest Night',
+            'amber': 'Amber Glow'
         };
         
         // === SIGNALING SERVER CONFIGURATION ===
@@ -3461,8 +3695,134 @@
         
         function sendToSignalingServer(data) {
             if (signalingWS && signalingWS.readyState === WebSocket.OPEN) {
-                signalingWS.send(JSON.stringify(data));
+                try {
+                    signalingWS.send(JSON.stringify(data));
+                    return true;
+                } catch (e) {
+                    console.error('[Signaling] Failed to send message:', e);
+                    return false;
+                }
+            } else {
+                console.warn('[Signaling] Not connected, attempting reconnect...');
+                connectToSignalingServer();
+                return false;
             }
+        }
+        
+        // === LATENCY MONITORING ===
+        let latencyHistory = [];
+        let connectionQuality = 'good'; // 'excellent', 'good', 'fair', 'poor'
+        let latencyCheckInterval = null;
+        
+        function startLatencyMonitoring() {
+            if (latencyCheckInterval) clearInterval(latencyCheckInterval);
+            
+            latencyCheckInterval = setInterval(() => {
+                measureLatency();
+            }, 5000); // Check every 5 seconds
+        }
+        
+        function measureLatency() {
+            const startTime = Date.now();
+            
+            // Measure latency to each connected peer
+            connections.forEach(conn => {
+                if (conn.open) {
+                    const pingId = `ping_${Date.now()}`;
+                    conn.send({ type: 'ping', id: pingId, timestamp: startTime });
+                }
+            });
+            
+            // Also measure signaling server latency
+            if (signalingWS && signalingWS.readyState === WebSocket.OPEN) {
+                signalingWS.send(JSON.stringify({ type: 'ping', timestamp: startTime }));
+            }
+        }
+        
+        function handlePingResponse(startTime) {
+            const latency = Date.now() - startTime;
+            latencyHistory.push(latency);
+            
+            // Keep only last 10 measurements
+            if (latencyHistory.length > 10) {
+                latencyHistory.shift();
+            }
+            
+            // Calculate average latency
+            const avgLatency = latencyHistory.reduce((a, b) => a + b, 0) / latencyHistory.length;
+            
+            // Update connection quality
+            if (avgLatency < 50) {
+                connectionQuality = 'excellent';
+            } else if (avgLatency < 150) {
+                connectionQuality = 'good';
+            } else if (avgLatency < 300) {
+                connectionQuality = 'fair';
+            } else {
+                connectionQuality = 'poor';
+            }
+            
+            // Update UI indicator if needed
+            updateConnectionQualityIndicator();
+        }
+        
+        function updateConnectionQualityIndicator() {
+            const indicator = document.getElementById('connection-quality');
+            if (!indicator) return;
+            
+            const colors = {
+                excellent: '#22c55e',
+                good: '#3b82f6',
+                fair: '#f59e0b',
+                poor: '#ef4444'
+            };
+            
+            const labels = {
+                excellent: 'Excellent',
+                good: 'Good',
+                fair: 'Fair',
+                poor: 'Poor'
+            };
+            
+            indicator.style.color = colors[connectionQuality];
+            indicator.title = `Connection: ${labels[connectionQuality]}`;
+        }
+        
+        // === OPTIMIZED MESSAGE QUEUE ===
+        let messageQueue = [];
+        let isFlushingQueue = false;
+        
+        function queueMessage(conn, data) {
+            messageQueue.push({ conn, data, timestamp: Date.now() });
+            
+            // Batch flush
+            if (!isFlushingQueue) {
+                isFlushingQueue = true;
+                setTimeout(flushMessageQueue, LATENCY_CONFIG.messageQueueFlushInterval);
+            }
+        }
+        
+        function flushMessageQueue() {
+            const queue = [...messageQueue];
+            messageQueue = [];
+            isFlushingQueue = false;
+            
+            queue.forEach(({ conn, data }) => {
+                if (conn && conn.open) {
+                    try {
+                        conn.send(data);
+                    } catch (e) {
+                        console.error('Failed to send queued message:', e);
+                        // Re-queue failed messages
+                        messageQueue.push({ conn, data, timestamp: Date.now() });
+                    }
+                }
+            });
+        }
+        
+        // Start latency monitoring when peer opens
+        function initLatencyMonitoring() {
+            startLatencyMonitoring();
         }
         
         // Check if a peer is online via signaling server
@@ -3746,6 +4106,17 @@
         }
 
         function handleData(data, conn) {
+            // Handle latency pings first
+            if (data.type === 'ping') {
+                conn.send({ type: 'pong', id: data.id, timestamp: data.timestamp });
+                return;
+            }
+            
+            if (data.type === 'pong') {
+                handlePingResponse(data.timestamp);
+                return;
+            }
+            
             // Handle global room messages separately
             if (isInGlobalRoom && (data.type?.startsWith('global-') || conn.metadata?.isGlobalRoom)) {
                 handleGlobalRoomMessage(data, conn);
@@ -4331,6 +4702,11 @@
             
             hideIncomingCallScreen();
             
+            // Answer the pending PeerJS call
+            if (window.pendingIncomingCall) {
+                answerPendingCall();
+            }
+            
             // Accept based on call type
             if (incomingCallData.callType === 'video') {
                 // Start video and show video call screen
@@ -4349,6 +4725,12 @@
         
         function declineIncomingCall() {
             hideIncomingCallScreen();
+            
+            // Close the pending call
+            if (window.pendingIncomingCall) {
+                window.pendingIncomingCall.close();
+                window.pendingIncomingCall = null;
+            }
             
             // Send decline message to peer
             if (incomingCallData && connections.length > 0) {
@@ -4634,11 +5016,42 @@
             });
         }
         function handleIncomingCall(call) {
-            if (myMode.includes('room') || myMode === 'direct') {
+            // Get caller info from participants or connection metadata
+            const callerInfo = participants[call.peer];
+            const callerName = callerInfo?.name || connectedPeerName || call.peer.substring(0, 8);
+            const hasVideo = call.metadata?.video !== false;
+            
+            // Show WhatsApp-style incoming call screen
+            showIncomingCallScreen({
+                callType: hasVideo ? 'video' : 'voice',
+                name: callerName,
+                peerId: call.peer,
+                call: call // Store call object to answer later
+            });
+            
+            // Store call for later answer
+            window.pendingIncomingCall = call;
+        }
+        
+        // Answer pending incoming call
+        function answerPendingCall() {
+            const call = window.pendingIncomingCall;
+            if (!call) return;
+            
+            if (myMode.includes('room') || myMode === 'direct' || myMode === 'idle') {
                 setVideoLayout(true);
-                if(!localStream) { call.answer(); handleCall(call); showToast("Incoming Video/Audio...", "info"); }
-                else { call.answer(localStream); handleCall(call); }
-            } else { call.close(); }
+                myMode = myMode === 'idle' ? 'direct' : myMode;
+                updateUIForMode(myMode);
+                
+                if(!localStream) { 
+                    call.answer(); 
+                    handleCall(call); 
+                } else { 
+                    call.answer(localStream); 
+                    handleCall(call); 
+                }
+            }
+            window.pendingIncomingCall = null;
         }
         
         function handleCall(call) {
@@ -5866,6 +6279,500 @@
             }
         }
         
+        // SECRET MODE FEATURES - For maximum privacy
+        let secretModeSettings = {
+            panicButton: false,
+            fakeCalculator: false,
+            silentNotifications: false,
+            autoLock: 'never',
+            ghostMode: false,
+            secretPin: '',
+            panicGesture: 'triple-tap'
+        };
+        
+        let tapCount = 0;
+        let tapTimer = null;
+        let lastActivityTime = Date.now();
+        let autoLockTimer = null;
+        let isAppLocked = false;
+        
+        // Load secret mode settings
+        function loadSecretModeSettings() {
+            secretModeSettings.panicButton = localStorage.getItem('uchat_panic_btn') === 'true';
+            secretModeSettings.fakeCalculator = localStorage.getItem('uchat_fake_calc') === 'true';
+            secretModeSettings.silentNotifications = localStorage.getItem('uchat_silent_notif') === 'true';
+            secretModeSettings.autoLock = localStorage.getItem('uchat_auto_lock') || 'never';
+            secretModeSettings.ghostMode = localStorage.getItem('uchat_ghost_mode') === 'true';
+            secretModeSettings.secretPin = localStorage.getItem('uchat_secret_pin') || '';
+            secretModeSettings.panicGesture = localStorage.getItem('uchat_panic_gesture') || 'triple-tap';
+            
+            // Update UI
+            const panicBtn = document.getElementById('setting-panic-btn');
+            const fakeCalc = document.getElementById('setting-fake-calc');
+            const silentNotif = document.getElementById('setting-silent-notif');
+            const autoLock = document.getElementById('setting-auto-lock');
+            const ghostMode = document.getElementById('setting-ghost-mode');
+            const panicGesture = document.getElementById('setting-panic-gesture');
+            
+            if (panicBtn) panicBtn.checked = secretModeSettings.panicButton;
+            if (fakeCalc) fakeCalc.checked = secretModeSettings.fakeCalculator;
+            if (silentNotif) silentNotif.checked = secretModeSettings.silentNotifications;
+            if (autoLock) autoLock.value = secretModeSettings.autoLock;
+            if (ghostMode) ghostMode.checked = secretModeSettings.ghostMode;
+            if (panicGesture) panicGesture.value = secretModeSettings.panicGesture;
+            
+            // Initialize features
+            if (secretModeSettings.panicButton) initPanicDetection();
+            if (secretModeSettings.autoLock !== 'never') initAutoLock();
+            if (secretModeSettings.ghostMode) enableGhostMode();
+            
+            // Check if app should be locked
+            if (secretModeSettings.secretPin) {
+                showPinLockScreen();
+            }
+        }
+        
+        function updateSecretMode(setting, value) {
+            secretModeSettings[setting] = value;
+            
+            const storageKeys = {
+                panicButton: 'uchat_panic_btn',
+                fakeCalculator: 'uchat_fake_calc',
+                silentNotifications: 'uchat_silent_notif',
+                autoLock: 'uchat_auto_lock',
+                ghostMode: 'uchat_ghost_mode',
+                panicGesture: 'uchat_panic_gesture'
+            };
+            
+            if (storageKeys[setting]) {
+                localStorage.setItem(storageKeys[setting], value.toString());
+            }
+            
+            // Initialize/disable features based on setting
+            if (setting === 'panicButton') {
+                if (value) initPanicDetection();
+                showToast(`Panic Button: ${value ? 'Armed 🚨' : 'Disabled'}`, value ? 'warning' : 'info');
+            } else if (setting === 'autoLock') {
+                if (value !== 'never') initAutoLock();
+                else clearAutoLockTimer();
+                showToast(`Auto-Lock: ${value === 'never' ? 'Off' : value}`, 'success');
+            } else if (setting === 'ghostMode') {
+                if (value) enableGhostMode();
+                else disableGhostMode();
+                showToast(`Ghost Mode: ${value ? 'Active 👻' : 'Disabled'}`, 'success');
+            } else if (setting === 'silentNotifications') {
+                showToast(`Silent Mode: ${value ? 'Enabled 🤫' : 'Disabled'}`, 'success');
+            } else if (setting === 'fakeCalculator') {
+                showToast(`Calculator Cover: ${value ? 'Ready' : 'Disabled'}`, 'success');
+            } else if (setting === 'panicGesture') {
+                showToast(`Exit gesture: ${value.replace('-', ' ')}`, 'success');
+            }
+        }
+        
+        function setSecretPin() {
+            const pinInput = document.getElementById('setting-secret-pin');
+            const pin = pinInput.value.trim();
+            
+            if (pin.length < 4 || pin.length > 6 || !/^\d+$/.test(pin)) {
+                showToast('PIN must be 4-6 digits', 'error');
+                return;
+            }
+            
+            secretModeSettings.secretPin = pin;
+            localStorage.setItem('uchat_secret_pin', pin);
+            pinInput.value = '';
+            showToast('Secret PIN set! 🔐', 'success');
+        }
+        
+        function initPanicDetection() {
+            // Remove existing listeners
+            document.removeEventListener('click', handlePanicTap);
+            document.removeEventListener('touchstart', handlePanicTap);
+            
+            const gesture = secretModeSettings.panicGesture;
+            
+            if (gesture === 'triple-tap') {
+                document.addEventListener('click', handlePanicTap);
+                document.addEventListener('touchstart', handlePanicTap);
+            } else if (gesture === 'shake') {
+                initShakeDetection();
+            } else if (gesture === 'volume-down') {
+                initVolumeKeyDetection();
+            } else if (gesture === 'swipe-down') {
+                initSwipeDetection();
+            }
+        }
+        
+        function handlePanicTap() {
+            if (!secretModeSettings.panicButton) return;
+            
+            tapCount++;
+            
+            if (tapTimer) clearTimeout(tapTimer);
+            
+            tapTimer = setTimeout(() => {
+                tapCount = 0;
+            }, 500);
+            
+            if (tapCount >= 3) {
+                triggerPanicMode();
+                tapCount = 0;
+            }
+        }
+        
+        function initShakeDetection() {
+            if (window.DeviceMotionEvent) {
+                let lastX, lastY, lastZ;
+                let shakeCount = 0;
+                
+                window.addEventListener('devicemotion', (e) => {
+                    if (!secretModeSettings.panicButton) return;
+                    
+                    const acc = e.accelerationIncludingGravity;
+                    if (!acc) return;
+                    
+                    if (lastX !== undefined) {
+                        const deltaX = Math.abs(acc.x - lastX);
+                        const deltaY = Math.abs(acc.y - lastY);
+                        const deltaZ = Math.abs(acc.z - lastZ);
+                        
+                        if (deltaX + deltaY + deltaZ > 30) {
+                            shakeCount++;
+                            if (shakeCount >= 3) {
+                                triggerPanicMode();
+                                shakeCount = 0;
+                            }
+                            setTimeout(() => shakeCount = Math.max(0, shakeCount - 1), 500);
+                        }
+                    }
+                    
+                    lastX = acc.x;
+                    lastY = acc.y;
+                    lastZ = acc.z;
+                });
+            }
+        }
+        
+        let volumeDownCount = 0;
+        function initVolumeKeyDetection() {
+            document.addEventListener('keydown', (e) => {
+                if (!secretModeSettings.panicButton) return;
+                
+                if (e.key === 'VolumeDown' || e.keyCode === 174) {
+                    volumeDownCount++;
+                    setTimeout(() => volumeDownCount = Math.max(0, volumeDownCount - 1), 1000);
+                    
+                    if (volumeDownCount >= 3) {
+                        triggerPanicMode();
+                        volumeDownCount = 0;
+                    }
+                }
+            });
+        }
+        
+        let swipeDownCount = 0;
+        function initSwipeDetection() {
+            let touchStartY = 0;
+            
+            document.addEventListener('touchstart', (e) => {
+                touchStartY = e.touches[0].clientY;
+            });
+            
+            document.addEventListener('touchend', (e) => {
+                if (!secretModeSettings.panicButton) return;
+                
+                const touchEndY = e.changedTouches[0].clientY;
+                const deltaY = touchEndY - touchStartY;
+                
+                if (deltaY > 100) { // Swipe down
+                    swipeDownCount++;
+                    setTimeout(() => swipeDownCount = Math.max(0, swipeDownCount - 1), 1000);
+                    
+                    if (swipeDownCount >= 2) {
+                        triggerPanicMode();
+                        swipeDownCount = 0;
+                    }
+                }
+            });
+        }
+        
+        function triggerPanicMode() {
+            console.log('🚨 PANIC MODE TRIGGERED');
+            
+            // Close all calls
+            if (currentCall) {
+                currentCall.close();
+                currentCall = null;
+            }
+            
+            // Hide call screens
+            document.getElementById('call-screen')?.classList.add('hidden');
+            document.getElementById('incoming-call-screen')?.classList.add('hidden');
+            
+            // Stop media
+            if (localStream) {
+                localStream.getTracks().forEach(t => t.stop());
+                localStream = null;
+            }
+            
+            if (secretModeSettings.fakeCalculator) {
+                showFakeCalculator();
+            } else {
+                // Just minimize or hide app
+                window.blur();
+                // Try to minimize browser (works on some mobile browsers)
+                try {
+                    if (document.body.requestFullscreen) {
+                        document.exitFullscreen().catch(() => {});
+                    }
+                } catch (e) {}
+                
+                // Show blank screen
+                showBlankScreen();
+            }
+        }
+        
+        function showFakeCalculator() {
+            // Create calculator overlay
+            const calcOverlay = document.createElement('div');
+            calcOverlay.id = 'fake-calculator';
+            calcOverlay.className = 'fixed inset-0 z-[9999] bg-gray-900 flex flex-col';
+            calcOverlay.innerHTML = `
+                <div class="flex-1 p-4 flex flex-col justify-end">
+                    <div class="text-right text-4xl font-light text-white mb-4" id="calc-display">0</div>
+                </div>
+                <div class="grid grid-cols-4 gap-1 p-2 bg-black">
+                    <button onclick="calcPress('C')" class="calc-btn bg-gray-600 text-white">C</button>
+                    <button onclick="calcPress('±')" class="calc-btn bg-gray-600 text-white">±</button>
+                    <button onclick="calcPress('%')" class="calc-btn bg-gray-600 text-white">%</button>
+                    <button onclick="calcPress('/')" class="calc-btn bg-orange-500 text-white">÷</button>
+                    <button onclick="calcPress('7')" class="calc-btn bg-gray-700 text-white">7</button>
+                    <button onclick="calcPress('8')" class="calc-btn bg-gray-700 text-white">8</button>
+                    <button onclick="calcPress('9')" class="calc-btn bg-gray-700 text-white">9</button>
+                    <button onclick="calcPress('*')" class="calc-btn bg-orange-500 text-white">×</button>
+                    <button onclick="calcPress('4')" class="calc-btn bg-gray-700 text-white">4</button>
+                    <button onclick="calcPress('5')" class="calc-btn bg-gray-700 text-white">5</button>
+                    <button onclick="calcPress('6')" class="calc-btn bg-gray-700 text-white">6</button>
+                    <button onclick="calcPress('-')" class="calc-btn bg-orange-500 text-white">−</button>
+                    <button onclick="calcPress('1')" class="calc-btn bg-gray-700 text-white">1</button>
+                    <button onclick="calcPress('2')" class="calc-btn bg-gray-700 text-white">2</button>
+                    <button onclick="calcPress('3')" class="calc-btn bg-gray-700 text-white">3</button>
+                    <button onclick="calcPress('+')" class="calc-btn bg-orange-500 text-white">+</button>
+                    <button onclick="calcPress('0')" class="calc-btn col-span-2 bg-gray-700 text-white">0</button>
+                    <button onclick="calcPress('.')" class="calc-btn bg-gray-700 text-white">.</button>
+                    <button onclick="calcPress('=')" class="calc-btn bg-orange-500 text-white">=</button>
+                </div>
+                <p class="text-center text-xs text-gray-500 py-2">Enter PIN to unlock UChat</p>
+            `;
+            
+            document.body.appendChild(calcOverlay);
+            
+            // Add calculator button styles
+            const style = document.createElement('style');
+            style.id = 'calc-styles';
+            style.textContent = '.calc-btn { padding: 20px; font-size: 24px; border-radius: 50%; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; }';
+            document.head.appendChild(style);
+        }
+        
+        let calcInput = '';
+        let calcPinAttempt = '';
+        
+        function calcPress(key) {
+            const display = document.getElementById('calc-display');
+            
+            if (key === 'C') {
+                calcInput = '';
+                calcPinAttempt = '';
+                display.textContent = '0';
+            } else if (key === '=') {
+                // Check if input matches secret PIN
+                if (calcPinAttempt === secretModeSettings.secretPin) {
+                    closeFakeCalculator();
+                    return;
+                }
+                
+                try {
+                    const result = eval(calcInput);
+                    display.textContent = result;
+                    calcInput = result.toString();
+                } catch {
+                    display.textContent = 'Error';
+                    calcInput = '';
+                }
+                calcPinAttempt = '';
+            } else if (!isNaN(key) || key === '.') {
+                calcInput += key;
+                calcPinAttempt += key;
+                display.textContent = calcInput;
+            } else {
+                calcInput += key;
+                display.textContent = calcInput;
+                calcPinAttempt = '';
+            }
+        }
+        
+        function closeFakeCalculator() {
+            document.getElementById('fake-calculator')?.remove();
+            document.getElementById('calc-styles')?.remove();
+            calcInput = '';
+            calcPinAttempt = '';
+            showToast('Welcome back! 🔓', 'success');
+        }
+        
+        function showBlankScreen() {
+            const blank = document.createElement('div');
+            blank.id = 'blank-screen';
+            blank.className = 'fixed inset-0 z-[9999] bg-black flex items-center justify-center';
+            blank.innerHTML = '<p class="text-gray-800 text-xs">Tap 5 times to unlock</p>';
+            
+            let unlockTaps = 0;
+            blank.addEventListener('click', () => {
+                unlockTaps++;
+                if (unlockTaps >= 5) {
+                    if (secretModeSettings.secretPin) {
+                        showPinLockScreen();
+                    }
+                    blank.remove();
+                }
+            });
+            
+            document.body.appendChild(blank);
+        }
+        
+        function showPinLockScreen() {
+            if (!secretModeSettings.secretPin) return;
+            
+            isAppLocked = true;
+            
+            const lockScreen = document.createElement('div');
+            lockScreen.id = 'pin-lock-screen';
+            lockScreen.className = 'fixed inset-0 z-[9998] flex flex-col items-center justify-center';
+            lockScreen.style.cssText = 'background: var(--color-dark);';
+            lockScreen.innerHTML = `
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style="background: var(--color-primary)">
+                        <i class="fas fa-lock text-white text-2xl"></i>
+                    </div>
+                    <h2 class="text-xl font-bold" style="color: var(--color-text-primary)">UChat Locked</h2>
+                    <p class="text-sm" style="color: var(--color-text-secondary)">Enter PIN to unlock</p>
+                </div>
+                <div class="flex gap-3 mb-6" id="pin-dots">
+                    <div class="w-4 h-4 rounded-full border-2" style="border-color: var(--color-primary)"></div>
+                    <div class="w-4 h-4 rounded-full border-2" style="border-color: var(--color-primary)"></div>
+                    <div class="w-4 h-4 rounded-full border-2" style="border-color: var(--color-primary)"></div>
+                    <div class="w-4 h-4 rounded-full border-2" style="border-color: var(--color-primary)"></div>
+                </div>
+                <div class="grid grid-cols-3 gap-4 w-64">
+                    ${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(n => n === '' ? '<div></div>' : `
+                        <button onclick="enterPin('${n}')" class="w-16 h-16 rounded-full text-xl font-semibold flex items-center justify-center transition hover:opacity-80" style="background: var(--color-surface); color: var(--color-text-primary)">
+                            ${n === '⌫' ? '<i class="fas fa-backspace"></i>' : n}
+                        </button>
+                    `).join('')}
+                </div>
+            `;
+            
+            document.body.appendChild(lockScreen);
+        }
+        
+        let enteredPin = '';
+        function enterPin(digit) {
+            if (digit === '⌫') {
+                enteredPin = enteredPin.slice(0, -1);
+            } else {
+                enteredPin += digit;
+            }
+            
+            // Update dots
+            const dots = document.querySelectorAll('#pin-dots div');
+            dots.forEach((dot, i) => {
+                if (i < enteredPin.length) {
+                    dot.style.background = 'var(--color-primary)';
+                } else {
+                    dot.style.background = 'transparent';
+                }
+            });
+            
+            // Check PIN
+            if (enteredPin.length >= secretModeSettings.secretPin.length) {
+                if (enteredPin === secretModeSettings.secretPin) {
+                    document.getElementById('pin-lock-screen')?.remove();
+                    isAppLocked = false;
+                    enteredPin = '';
+                    showToast('Welcome back! 🔓', 'success');
+                } else {
+                    // Wrong PIN
+                    enteredPin = '';
+                    dots.forEach(dot => {
+                        dot.style.background = 'transparent';
+                        dot.style.borderColor = '#ef4444';
+                    });
+                    setTimeout(() => {
+                        dots.forEach(dot => dot.style.borderColor = 'var(--color-primary)');
+                    }, 500);
+                }
+            }
+        }
+        
+        function initAutoLock() {
+            clearAutoLockTimer();
+            
+            const lockTimes = {
+                '30s': 30000,
+                '1m': 60000,
+                '5m': 300000
+            };
+            
+            const lockTime = lockTimes[secretModeSettings.autoLock];
+            if (!lockTime) return;
+            
+            // Reset timer on activity
+            const resetTimer = () => {
+                lastActivityTime = Date.now();
+                clearAutoLockTimer();
+                autoLockTimer = setTimeout(() => {
+                    if (secretModeSettings.secretPin) {
+                        showPinLockScreen();
+                    }
+                }, lockTime);
+            };
+            
+            document.addEventListener('click', resetTimer);
+            document.addEventListener('keypress', resetTimer);
+            document.addEventListener('touchstart', resetTimer);
+            
+            resetTimer();
+        }
+        
+        function clearAutoLockTimer() {
+            if (autoLockTimer) {
+                clearTimeout(autoLockTimer);
+                autoLockTimer = null;
+            }
+        }
+        
+        function enableGhostMode() {
+            // Add CSS to blur content when page visibility changes
+            document.addEventListener('visibilitychange', handleVisibilityChange);
+        }
+        
+        function disableGhostMode() {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+        }
+        
+        function handleVisibilityChange() {
+            if (!secretModeSettings.ghostMode) return;
+            
+            if (document.hidden) {
+                // Page is hidden - blur content for recent apps preview
+                document.body.style.filter = 'blur(20px)';
+            } else {
+                document.body.style.filter = 'none';
+            }
+        }
+        
+        // Initialize secret mode on load
+        setTimeout(loadSecretModeSettings, 100);
+        
         function resetPrivacySettings() {
             showCustomConfirm("Reset Privacy Settings?", "All privacy settings will be restored to defaults.", () => {
                 // Reset to defaults
@@ -5934,6 +6841,21 @@
         }
         
         function initGlobalRoom() {
+            // Check if peer is initialized
+            if (!peer || !peer.id) {
+                showToast("⚠️ Waiting for connection...", "warning");
+                // Retry in 2 seconds
+                setTimeout(() => {
+                    if (peer && peer.id) {
+                        initGlobalRoom();
+                    } else {
+                        showToast("❌ Connection failed. Please refresh.", "error");
+                        document.getElementById('btn-global-room').innerHTML = '<i class="fas fa-door-open mr-2"></i>Join UChat All';
+                    }
+                }, 2000);
+                return;
+            }
+            
             isInGlobalRoom = true;
             myMode = 'global';
             globalRoomUsers = {};
@@ -5948,10 +6870,18 @@
             
             // Try signaling server first (for cross-browser/cross-device discovery)
             if (signalingConnected) {
-                sendToSignalingServer({
+                const sent = sendToSignalingServer({
                     type: 'join-global-room',
                     name: myName
                 });
+                
+                if (!sent) {
+                    console.log('[Global Room] Signaling server not available, using P2P discovery only');
+                }
+            } else {
+                console.log('[Global Room] Signaling server not connected, using P2P discovery');
+                // Try to connect to signaling server
+                connectToSignalingServer();
             }
             
             // Also use localStorage fallback for same-device discovery
