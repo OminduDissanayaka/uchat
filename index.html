@@ -1629,12 +1629,24 @@
                     
                     <div class="grid grid-cols-2 gap-2">
                         <button onclick="connectDirect()" id="btn-direct" class="text-white font-bold py-3 rounded-xl transition-all hover:scale-[1.02] shadow-lg flex flex-col items-center justify-center gap-1" style="background: linear-gradient(135deg, #10b981, #059669)">
-                            <i class="fas fa-user-friends"></i>
-                            <span class="text-[10px]">1v1 DIRECT</span>
+                            <i class="fas fa-comment-dots"></i>
+                            <span class="text-[10px]">CHAT ONLY</span>
                         </button>
                         <button onclick="joinPeer()" id="btn-join" class="text-white font-bold py-3 rounded-xl transition-all hover:scale-[1.02] shadow-lg flex flex-col items-center justify-center gap-1" style="background: linear-gradient(135deg, var(--color-primary), var(--color-accent))">
                             <i class="fas fa-sign-in-alt"></i>
                             <span class="text-[10px]">JOIN HOST</span>
+                        </button>
+                    </div>
+                    
+                    <!-- Voice & Video Call Buttons -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="startVoiceCallDirect()" id="btn-voice-call" class="text-white font-bold py-3 rounded-xl transition-all hover:scale-[1.02] shadow-lg flex flex-col items-center justify-center gap-1" style="background: linear-gradient(135deg, #f59e0b, #d97706)">
+                            <i class="fas fa-phone-alt"></i>
+                            <span class="text-[10px]">VOICE CALL</span>
+                        </button>
+                        <button onclick="startVideoCallDirect()" id="btn-video-call" class="text-white font-bold py-3 rounded-xl transition-all hover:scale-[1.02] shadow-lg flex flex-col items-center justify-center gap-1" style="background: linear-gradient(135deg, #ec4899, #be185d)">
+                            <i class="fas fa-video"></i>
+                            <span class="text-[10px]">VIDEO CALL</span>
                         </button>
                     </div>
                 </div>
@@ -2671,6 +2683,33 @@
         function initDirect(id) {
             isHost = false; myMode = 'direct'; document.getElementById('btn-direct').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             const conn = peer.connect(id, { metadata: { type: 'direct' } });
+            
+            // Set timeout to detect if user is offline
+            const connectionTimeout = setTimeout(() => {
+                if (!conn.open) {
+                    showToast("User appears to be offline. They may not receive your connection request.", "warning");
+                    // Show alert modal
+                    showCustomConfirm(
+                        "User Offline", 
+                        "The user you're trying to connect to appears to be offline. Would you like to wait for them to come online?",
+                        () => {
+                            // Continue waiting
+                            showToast("Waiting for user to come online...", "info");
+                        },
+                        () => {
+                            // Cancel connection
+                            conn.close();
+                            resetSession();
+                            document.getElementById('btn-direct').innerHTML = '<i class="fas fa-comment-dots"></i><span class="text-[10px]">CHAT ONLY</span>';
+                        }
+                    );
+                }
+            }, 10000); // 10 second timeout
+            
+            conn.on('open', () => {
+                clearTimeout(connectionTimeout);
+            });
+            
             setupDataConnection(conn); connections.push(conn); updateUIForMode('direct');
         }
 
@@ -2719,9 +2758,18 @@
             else if (meta.type === 'direct') {
                 if (myMode !== 'idle' && myMode !== 'direct') { conn.on('open', () => { conn.send({type:'system', msg:'User busy'}); setTimeout(()=>conn.close(),500); }); return; }
                 
+                // Determine call type from metadata
+                const callType = meta.callType;
+                let requestMessage = `Direct Chat request from ${conn.peer}. Accept?`;
+                if (callType === 'voice') {
+                    requestMessage = `📞 Incoming Voice Call from ${conn.peer}. Accept?`;
+                } else if (callType === 'video') {
+                    requestMessage = `📹 Incoming Video Call from ${conn.peer}. Accept?`;
+                }
+                
                 // Check if require approval is enabled
                 if (privacySettings.requireApproval) {
-                    showCustomConfirm("Incoming Request", `Direct Chat request from ${conn.peer}. Accept?`, () => {
+                    showCustomConfirm("Incoming Request", requestMessage, () => {
                         resetSession(); myMode = 'direct'; isHost = false; connections.push(conn); setupDataConnection(conn); updateUIForMode('direct');
                     }, () => { 
                         conn.on('open', () => { 
@@ -2732,7 +2780,10 @@
                 } else {
                     // Auto-accept connection
                     resetSession(); myMode = 'direct'; isHost = false; connections.push(conn); setupDataConnection(conn); updateUIForMode('direct');
-                    showToast("Direct connection accepted automatically", "info");
+                    let acceptMsg = "Direct connection accepted automatically";
+                    if (callType === 'voice') acceptMsg = "📞 Voice call accepted automatically";
+                    else if (callType === 'video') acceptMsg = "📹 Video call accepted automatically";
+                    showToast(acceptMsg, "info");
                 }
             }
             else { conn.on('open', () => conn.close()); }
@@ -2751,7 +2802,7 @@
                         conn.send({ type: 'meta', sub: 'peer-list', peers: peerList });
                     }
                 }
-                if(myMode === 'direct') { showToast("Direct Connection Established", "success"); document.getElementById('btn-direct').innerHTML = '<i class="fas fa-user-friends mb-1"></i><span class="text-[10px]">1v1 DIRECT</span>'; }
+                if(myMode === 'direct') { showToast("Direct Connection Established", "success"); document.getElementById('btn-direct').innerHTML = '<i class="fas fa-comment-dots mb-1"></i><span class="text-[10px]">CHAT ONLY</span>'; }
             });
             conn.on('data', (data) => handleData(data, conn));
             conn.on('close', () => handleDisconnect(conn.peer));
@@ -2986,6 +3037,152 @@
                 showToast("Camera/Mic access denied. Check permissions.", "error");
             }
         }
+        
+        // Voice Call Only (Audio without Video)
+        async function startVoiceCallDirect() {
+            const id = document.getElementById('remote-id').value.trim();
+            if(!id) return showToast("Enter Peer ID", "error");
+            if(id === peer.id) return showToast("Cannot call yourself", "error");
+            
+            // First establish connection if not already connected
+            if (myMode !== 'direct' || connections.length === 0) {
+                if(connections.length > 0 || hostConn) { 
+                    showCustomConfirm("Start New Call?", "Current session will be closed.", () => { 
+                        resetSession(); 
+                        initDirectWithVoiceCall(id); 
+                    }); 
+                    return; 
+                }
+                initDirectWithVoiceCall(id);
+            } else {
+                // Already connected, start voice call
+                await startVoiceOnlyStream();
+            }
+        }
+        
+        function initDirectWithVoiceCall(id) {
+            isHost = false; myMode = 'direct';
+            document.getElementById('btn-voice-call').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            const conn = peer.connect(id, { metadata: { type: 'direct', callType: 'voice' } });
+            
+            // Set timeout to detect if user is offline
+            const connectionTimeout = setTimeout(() => {
+                if (!conn.open) {
+                    showToast("User appears to be offline", "warning");
+                    showCustomConfirm(
+                        "User Offline", 
+                        "The user you're trying to call appears to be offline. Would you like to wait?",
+                        () => { showToast("Waiting for user...", "info"); },
+                        () => {
+                            conn.close();
+                            resetSession();
+                            document.getElementById('btn-voice-call').innerHTML = '<i class="fas fa-phone-alt"></i><span class="text-[10px]">VOICE CALL</span>';
+                        }
+                    );
+                }
+            }, 10000);
+            
+            conn.on('open', async () => {
+                clearTimeout(connectionTimeout);
+                document.getElementById('btn-voice-call').innerHTML = '<i class="fas fa-phone-alt"></i><span class="text-[10px]">VOICE CALL</span>';
+                await startVoiceOnlyStream();
+            });
+            
+            setupDataConnection(conn); 
+            connections.push(conn); 
+            updateUIForMode('direct');
+        }
+        
+        async function startVoiceOnlyStream() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: false,
+                    audio: {
+                        echoCancellation: true,
+                        noiseSuppression: true,
+                        autoGainControl: true,
+                        sampleRate: 48000,
+                        channelCount: 2
+                    }
+                });
+                
+                localStream = stream;
+                
+                // Don't show video area for voice only
+                document.getElementById('media-controls').classList.remove('hidden');
+                updateMediaIcons(true, false, false);
+                
+                // Call the peer with audio only
+                if(connections.length > 0) {
+                    const call = peer.call(connections[0].peer, localStream, {
+                        sdpTransform: optimizeSDP
+                    });
+                    handleCall(call);
+                }
+                
+                showToast("Voice call started", "success");
+            } catch (e) {
+                console.error('Microphone error:', e);
+                showToast("Microphone access denied", "error");
+            }
+        }
+        
+        // Video Call (Audio + Video)
+        async function startVideoCallDirect() {
+            const id = document.getElementById('remote-id').value.trim();
+            if(!id) return showToast("Enter Peer ID", "error");
+            if(id === peer.id) return showToast("Cannot call yourself", "error");
+            
+            // First establish connection if not already connected
+            if (myMode !== 'direct' || connections.length === 0) {
+                if(connections.length > 0 || hostConn) { 
+                    showCustomConfirm("Start New Call?", "Current session will be closed.", () => { 
+                        resetSession(); 
+                        initDirectWithVideoCall(id); 
+                    }); 
+                    return; 
+                }
+                initDirectWithVideoCall(id);
+            } else {
+                // Already connected, start video call
+                await startLocalVideo();
+            }
+        }
+        
+        function initDirectWithVideoCall(id) {
+            isHost = false; myMode = 'direct';
+            document.getElementById('btn-video-call').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+            
+            const conn = peer.connect(id, { metadata: { type: 'direct', callType: 'video' } });
+            
+            // Set timeout to detect if user is offline
+            const connectionTimeout = setTimeout(() => {
+                if (!conn.open) {
+                    showToast("User appears to be offline", "warning");
+                    showCustomConfirm(
+                        "User Offline", 
+                        "The user you're trying to call appears to be offline. Would you like to wait?",
+                        () => { showToast("Waiting for user...", "info"); },
+                        () => {
+                            conn.close();
+                            resetSession();
+                            document.getElementById('btn-video-call').innerHTML = '<i class="fas fa-video"></i><span class="text-[10px]">VIDEO CALL</span>';
+                        }
+                    );
+                }
+            }, 10000);
+            
+            conn.on('open', async () => {
+                clearTimeout(connectionTimeout);
+                document.getElementById('btn-video-call').innerHTML = '<i class="fas fa-video"></i><span class="text-[10px]">VIDEO CALL</span>';
+                await startLocalVideo();
+            });
+            
+            setupDataConnection(conn); 
+            connections.push(conn); 
+            updateUIForMode('direct');
+        }
 
         // SDP Optimization for better bitrate
         function optimizeSDP(sdp) {
@@ -3187,6 +3384,35 @@
             if (track) {
                 track.enabled = !track.enabled;
                 updateMediaIcons(localStream.getAudioTracks()[0]?.enabled, track.enabled, isScreenSharing);
+                
+                // Hide/show local video card based on video state
+                const localVideoCard = document.getElementById('local-video-card');
+                if (localVideoCard) {
+                    if (track.enabled) {
+                        localVideoCard.classList.remove('hidden');
+                    } else {
+                        localVideoCard.classList.add('hidden');
+                    }
+                }
+                
+                // Check if all videos are off to hide video area
+                checkAndHideVideoArea();
+            }
+        }
+        
+        function checkAndHideVideoArea() {
+            const videoGrid = document.getElementById('video-grid');
+            const localVideoCard = document.getElementById('local-video-card');
+            const remoteCards = videoGrid.querySelectorAll('.video-card:not(#local-video-card)');
+            
+            const localVideoVisible = localVideoCard && !localVideoCard.classList.contains('hidden');
+            const hasRemoteVideos = remoteCards.length > 0;
+            
+            // If no local video and no remote videos, hide the video area
+            if (!localVideoVisible && !hasRemoteVideos) {
+                setVideoLayout(false);
+            } else {
+                setVideoLayout(true);
             }
         }
         
@@ -3248,9 +3474,10 @@
                         const audioBlob = new Blob(audioChunks, { type: mimeType });
                         const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
                         const voiceFile = new File([audioBlob], `voice_${Date.now()}.${ext}`, { type: mimeType });
-                        const payload = { type: 'file', file: voiceFile, filename: voiceFile.name, filetype: voiceFile.type, filesize: voiceFile.size, previewType: 'voice', sender: myName };
+                        const voiceMsgId = `msg-${++messageIdCounter}`;
+                        const payload = { type: 'file', file: voiceFile, filename: voiceFile.name, filetype: voiceFile.type, filesize: voiceFile.size, previewType: 'voice', sender: myName, msgId: voiceMsgId };
                         if(isHost || myMode === 'direct') broadcastData(payload); else if(hostConn) hostConn.send(payload);
-                        const url = URL.createObjectURL(audioBlob); appendVoiceMessage(url, 'out', 'Me');
+                        const url = URL.createObjectURL(audioBlob); appendVoiceMessage(url, 'out', 'Me', voiceMsgId);
                     };
                     mediaRecorder.start();
                     document.getElementById('recording-ui').classList.remove('hidden'); 
@@ -3745,8 +3972,8 @@
             const blob = new Blob([blobData], {type: data.filetype});
             const url = URL.createObjectURL(blob);
             if (data.previewType === 'image') appendImageMessage(url, 'in', data.sender, data.filename);
-            else if (data.previewType === 'video') appendVideoMessage(url, 'in', data.sender, data.filename);
-            else if (data.previewType === 'voice') appendVoiceMessage(url, 'in', data.sender);
+            else if (data.previewType === 'video') appendVideoMessage(url, 'in', data.sender, data.filename, data.msgId);
+            else if (data.previewType === 'voice') appendVoiceMessage(url, 'in', data.sender, data.msgId);
             else appendFileMessage(data.filename, data.filesize, 'in', url, data.filetype, data.sender);
         }
 
@@ -3854,7 +4081,9 @@
             document.getElementById('btn-stats').classList.add('hidden');
             document.getElementById('btn-participants').classList.add('hidden');
             document.getElementById('btn-join').innerHTML = '<i class="fas fa-sign-in-alt"></i><span class="text-[10px]">JOIN HOST</span>'; 
-            document.getElementById('btn-direct').innerHTML = '<i class="fas fa-user-friends"></i><span class="text-[10px]">1v1 DIRECT</span>';
+            document.getElementById('btn-direct').innerHTML = '<i class="fas fa-comment-dots"></i><span class="text-[10px]">CHAT ONLY</span>';
+            document.getElementById('btn-voice-call').innerHTML = '<i class="fas fa-phone-alt"></i><span class="text-[10px]">VOICE CALL</span>';
+            document.getElementById('btn-video-call').innerHTML = '<i class="fas fa-video"></i><span class="text-[10px]">VIDEO CALL</span>';
             isHost = false; myMode = 'idle'; connectedPeerName = null;
             isInGlobalRoom = false; globalRoomUsers = {};
             document.getElementById('header-title').innerText = "UChat"; 
@@ -3946,7 +4175,7 @@
             div.innerHTML = `
                 <div class="max-w-[70%] flex flex-col ${dir === 'out' ? 'items-end' : 'items-start'}">
                     <span class="text-[9px] mb-1 px-1" style="color: var(--color-text-secondary)">${sender}</span>
-                    <div class="p-1 rounded-2xl shadow-md cursor-pointer hover:opacity-90 transition" style="background: var(--color-surface); border: 1px solid var(--color-border)" onclick="openMediaModal('${url}', 'image', '${filename}')">
+                    <div class="p-1 rounded-2xl shadow-md cursor-pointer hover:opacity-90 transition chat-bubble" style="background: var(--color-surface); border: 1px solid var(--color-border)" onclick="openMediaModal('${url}', 'image', '${filename}')">
                         <img src="${url}" class="rounded-xl w-full h-auto max-h-64 object-cover bg-black">
                     </div>
                     <span class="text-[9px] mt-1 px-1" style="color: var(--color-text-secondary)">${getTime()}</span>
@@ -3958,28 +4187,39 @@
             if (dir === 'in') sendNotification(`${sender}`, '📷 Sent an image', '📷');
         }
         
-        function appendVideoMessage(url, dir, sender, filename) { 
+        function appendVideoMessage(url, dir, sender, filename, msgId = null) { 
             const chatBox = document.getElementById('chat-box'); 
             if(chatBox.querySelector('h3')) chatBox.innerHTML = ''; 
+            
+            const id = msgId || `msg-${++messageIdCounter}`;
             const div = document.createElement('div'); 
+            div.id = id;
+            div.dataset.msgId = id;
             div.className = `flex w-full ${dir === 'out' ? 'justify-end' : 'justify-start'} animate-fade-in`; 
             div.innerHTML = `
                 <div class="max-w-[70%] flex flex-col ${dir === 'out' ? 'items-end' : 'items-start'}">
                     <span class="text-[9px] mb-1 px-1" style="color: var(--color-text-secondary)">${sender}</span>
-                    <div class="p-1 rounded-2xl shadow-md relative cursor-pointer hover:opacity-90 transition" style="background: var(--color-surface); border: 1px solid var(--color-border)" onclick="openMediaModal('${url}', 'video', '${filename}')">
+                    <div class="p-1 rounded-2xl shadow-md relative cursor-pointer hover:opacity-90 transition chat-bubble" style="background: var(--color-surface); border: 1px solid var(--color-border)" onclick="openMediaModal('${url}', 'video', '${filename}')">
                         <video src="${url}" class="rounded-xl w-full h-auto max-h-64 object-cover bg-black"></video>
                         <div class="play-overlay"><i class="fas fa-play text-white text-xl ml-1"></i></div>
                     </div>
                     <span class="text-[9px] mt-1 px-1" style="color: var(--color-text-secondary)">${getTime()}</span>
                 </div>`; 
             chatBox.appendChild(div); 
-            scrollToBottom(); 
+            scrollToBottom();
+            
+            // Store in message history for delete-for-everyone
+            messageHistory.push({ id, type: 'video', url, sender, time: getTime(), dir });
         }
         
-        function appendVoiceMessage(url, dir, sender) { 
+        function appendVoiceMessage(url, dir, sender, msgId = null) { 
             const chatBox = document.getElementById('chat-box'); 
             if(chatBox.querySelector('h3')) chatBox.innerHTML = ''; 
+            
+            const id = msgId || `msg-${++messageIdCounter}`;
             const div = document.createElement('div'); 
+            div.id = id;
+            div.dataset.msgId = id;
             div.className = `flex w-full ${dir === 'out' ? 'justify-end' : 'justify-start'} animate-fade-in`; 
             const bgStyle = dir === 'out' ? 'background: var(--color-outgoing);' : 'background: var(--color-incoming);';
             div.innerHTML = `
@@ -3994,7 +4234,10 @@
                     <span class="text-[9px] mt-1 px-1" style="color: var(--color-text-secondary)">${getTime()}</span>
                 </div>`; 
             chatBox.appendChild(div); 
-            scrollToBottom(); 
+            scrollToBottom();
+            
+            // Store in message history for delete-for-everyone
+            messageHistory.push({ id, type: 'voice', url, sender, time: getTime(), dir });
         }
         
         function appendFileMessage(name, size, dir, url, type, sender) { 
@@ -4975,15 +5218,36 @@
             const msgEl = document.getElementById(msgId);
             if (!msgEl) return;
             
-            // Find the chat bubble and replace content
+            // Find the chat bubble or message container and replace content
             const bubble = msgEl.querySelector('.chat-bubble');
+            const container = msgEl.querySelector('.max-w-\\[85\\%\\], .max-w-\\[70\\%\\], .max-w-\\[80\\%\\]') || msgEl.querySelector('[class*="max-w-"]');
+            
             if (bubble) {
+                // Standard text/voice message with chat-bubble
                 bubble.innerHTML = `
                     <span class="deleted-message">
                         <i class="fas fa-ban mr-1"></i> This message was deleted
                     </span>`;
                 bubble.style.background = 'var(--color-surface)';
                 bubble.style.opacity = '0.7';
+                // Remove audio if it's a voice message
+                const audio = msgEl.querySelector('audio');
+                if (audio) audio.remove();
+            } else if (container) {
+                // For image/video messages without chat-bubble class, find and replace the media element
+                const media = msgEl.querySelector('img, video, audio');
+                const mediaContainer = media ? media.closest('div[onclick]') || media.parentElement : null;
+                
+                if (mediaContainer) {
+                    mediaContainer.innerHTML = `
+                        <div class="p-4 rounded-2xl flex items-center justify-center gap-2" style="background: var(--color-surface); opacity: 0.7; min-width: 150px;">
+                            <span class="deleted-message">
+                                <i class="fas fa-ban mr-1"></i> This message was deleted
+                            </span>
+                        </div>`;
+                    mediaContainer.onclick = null;
+                    mediaContainer.style.cursor = 'default';
+                }
             }
             
             // Update message history
