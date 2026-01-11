@@ -1075,6 +1075,541 @@
         .message-highlight {
             animation: messageHighlight 1s ease-in-out 2;
         }
+
+        /* =====================================================
+           WhatsApp-Style Call UI
+           ===================================================== */
+        
+        /* Call Screen Overlay */
+        .call-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(180deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            animation: callFadeIn 0.3s ease-out;
+        }
+
+        .call-screen.active {
+            display: flex;
+        }
+
+        @keyframes callFadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        /* Call Avatar */
+        .call-avatar-container {
+            position: relative;
+            margin-bottom: 24px;
+        }
+
+        .call-avatar {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 56px;
+            color: white;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 0 10px 50px rgba(102, 126, 234, 0.4);
+            position: relative;
+            z-index: 2;
+        }
+
+        /* Ringing Pulse Animation */
+        .call-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            border: 3px solid rgba(102, 126, 234, 0.6);
+            z-index: 1;
+        }
+
+        .call-pulse.ring-1 {
+            animation: callPulse 2s ease-out infinite;
+        }
+
+        .call-pulse.ring-2 {
+            animation: callPulse 2s ease-out infinite 0.5s;
+        }
+
+        .call-pulse.ring-3 {
+            animation: callPulse 2s ease-out infinite 1s;
+        }
+
+        @keyframes callPulse {
+            0% {
+                width: 140px;
+                height: 140px;
+                opacity: 1;
+            }
+            100% {
+                width: 280px;
+                height: 280px;
+                opacity: 0;
+            }
+        }
+
+        /* Call Info */
+        .call-info {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .call-name {
+            font-size: 28px;
+            font-weight: 700;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .call-status {
+            font-size: 16px;
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .call-status i {
+            font-size: 14px;
+        }
+
+        .call-timer {
+            font-size: 20px;
+            font-weight: 600;
+            color: #22c55e;
+            font-family: 'SF Mono', 'Roboto Mono', monospace;
+        }
+
+        /* Call Actions */
+        .call-actions {
+            display: flex;
+            gap: 20px;
+            margin-top: auto;
+            padding-bottom: 60px;
+        }
+
+        .call-action-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-size: 24px;
+        }
+
+        .call-action-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .call-action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .call-action-btn.mute {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .call-action-btn.mute.active {
+            background: white;
+            color: #1a1a2e;
+        }
+
+        .call-action-btn.speaker {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .call-action-btn.speaker.active {
+            background: white;
+            color: #1a1a2e;
+        }
+
+        .call-action-btn.video-toggle {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .call-action-btn.video-toggle.active {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .call-action-btn.end-call {
+            background: #ef4444;
+            color: white;
+            width: 72px;
+            height: 72px;
+            font-size: 28px;
+        }
+
+        .call-action-btn.end-call:hover {
+            background: #dc2626;
+        }
+
+        .call-action-btn.accept-call {
+            background: #22c55e;
+            color: white;
+            width: 72px;
+            height: 72px;
+            font-size: 28px;
+        }
+
+        .call-action-btn.accept-call:hover {
+            background: #16a34a;
+        }
+
+        /* Incoming Call Actions */
+        .incoming-call-actions {
+            display: flex;
+            gap: 48px;
+        }
+
+        .incoming-action-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .incoming-action-label {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Video Call Screen */
+        .video-call-screen {
+            position: fixed;
+            inset: 0;
+            z-index: 200;
+            display: none;
+            background: #0f0f0f;
+        }
+
+        .video-call-screen.active {
+            display: block;
+        }
+
+        .video-call-main {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-call-main video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-call-pip {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            width: 120px;
+            height: 180px;
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            border: 3px solid rgba(255, 255, 255, 0.2);
+            cursor: grab;
+            transition: transform 0.2s;
+            z-index: 10;
+        }
+
+        .video-call-pip:hover {
+            transform: scale(1.05);
+            border-color: var(--color-primary);
+        }
+
+        .video-call-pip video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-call-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            background: linear-gradient(180deg, rgba(0, 0, 0, 0.7) 0%, transparent 100%);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 5;
+        }
+
+        .video-call-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .video-call-avatar-small {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .video-call-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .video-call-duration {
+            font-size: 14px;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .video-call-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 24px;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0.8) 0%, transparent 100%);
+            display: flex;
+            justify-content: center;
+            gap: 16px;
+            z-index: 5;
+        }
+
+        .video-control-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border: none;
+            color: white;
+            font-size: 22px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .video-control-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.1);
+        }
+
+        .video-control-btn.active {
+            background: white;
+            color: #0f0f0f;
+        }
+
+        .video-control-btn.end {
+            background: #ef4444;
+            width: 64px;
+            height: 64px;
+            font-size: 26px;
+        }
+
+        .video-control-btn.end:hover {
+            background: #dc2626;
+        }
+
+        /* Incoming Call Notification (Mini) */
+        .incoming-call-mini {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 16px;
+            padding: 16px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 250;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideInRight 0.3s ease-out;
+            max-width: 350px;
+        }
+
+        .incoming-call-mini.active {
+            display: flex;
+        }
+
+        @keyframes slideInRight {
+            from { opacity: 0; transform: translateX(100px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .incoming-call-mini-avatar {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .incoming-call-mini-info {
+            flex: 1;
+        }
+
+        .incoming-call-mini-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .incoming-call-mini-type {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        .incoming-call-mini-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .incoming-call-mini-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            transition: transform 0.2s;
+        }
+
+        .incoming-call-mini-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .incoming-call-mini-btn.decline {
+            background: #ef4444;
+            color: white;
+        }
+
+        .incoming-call-mini-btn.accept {
+            background: #22c55e;
+            color: white;
+        }
+
+        /* Call Connecting Animation */
+        .connecting-dots {
+            display: inline-flex;
+            gap: 4px;
+        }
+
+        .connecting-dots span {
+            width: 6px;
+            height: 6px;
+            background: white;
+            border-radius: 50%;
+            animation: dotPulse 1.4s ease-in-out infinite;
+        }
+
+        .connecting-dots span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .connecting-dots span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes dotPulse {
+            0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+            40% { opacity: 1; transform: scale(1); }
+        }
+
+        /* Call Quality Indicator */
+        .call-quality {
+            display: flex;
+            gap: 2px;
+            align-items: flex-end;
+        }
+
+        .call-quality-bar {
+            width: 4px;
+            background: white;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .call-quality-bar:nth-child(1) { height: 4px; }
+        .call-quality-bar:nth-child(2) { height: 8px; }
+        .call-quality-bar:nth-child(3) { height: 12px; }
+        .call-quality-bar:nth-child(4) { height: 16px; }
+
+        .call-quality.poor .call-quality-bar { background: #ef4444; }
+        .call-quality.poor .call-quality-bar:nth-child(3),
+        .call-quality.poor .call-quality-bar:nth-child(4) { opacity: 0.3; }
+
+        .call-quality.fair .call-quality-bar { background: #eab308; }
+        .call-quality.fair .call-quality-bar:nth-child(4) { opacity: 0.3; }
+
+        .call-quality.good .call-quality-bar { background: #22c55e; }
+
+        /* Ringing Sound Bars Animation */
+        .sound-bars {
+            display: flex;
+            gap: 3px;
+            align-items: flex-end;
+            height: 20px;
+        }
+
+        .sound-bar {
+            width: 4px;
+            background: linear-gradient(180deg, #22c55e 0%, #16a34a 100%);
+            border-radius: 2px;
+            animation: soundWave 0.5s ease-in-out infinite alternate;
+        }
+
+        .sound-bar:nth-child(1) { height: 6px; animation-delay: 0s; }
+        .sound-bar:nth-child(2) { height: 12px; animation-delay: 0.1s; }
+        .sound-bar:nth-child(3) { height: 18px; animation-delay: 0.2s; }
+        .sound-bar:nth-child(4) { height: 12px; animation-delay: 0.3s; }
+        .sound-bar:nth-child(5) { height: 6px; animation-delay: 0.4s; }
+
+        @keyframes soundWave {
+            from { transform: scaleY(0.5); }
+            to { transform: scaleY(1); }
+        }
     </style>
 </head>
 <body class="font-sans h-[100dvh] overflow-hidden flex flex-col md:flex-row transition-colors duration-300">
@@ -1112,6 +1647,130 @@
         <div class="context-menu-divider"></div>
         <div class="context-menu-item" onclick="deleteForMe()"><i class="fas fa-user-times"></i> Delete for me</div>
         <div id="delete-everyone-option" class="context-menu-item hidden" style="color: #ef4444" onclick="showDeleteForEveryoneConfirm()"><i class="fas fa-trash-alt"></i> Delete for everyone</div>
+    </div>
+
+    <!-- =====================================================
+         WhatsApp-Style Call Screens
+         ===================================================== -->
+
+    <!-- Voice Call Screen -->
+    <div id="voice-call-screen" class="call-screen">
+        <div class="call-avatar-container">
+            <div class="call-pulse ring-1"></div>
+            <div class="call-pulse ring-2"></div>
+            <div class="call-pulse ring-3"></div>
+            <div class="call-avatar" id="voice-call-avatar">?</div>
+        </div>
+        <div class="call-info">
+            <div class="call-name" id="voice-call-name">Unknown</div>
+            <div class="call-status" id="voice-call-status">
+                <span>Calling</span>
+                <div class="connecting-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+            <div class="call-timer hidden" id="voice-call-timer">00:00</div>
+        </div>
+        <div class="call-actions">
+            <button class="call-action-btn mute" id="voice-mute-btn" onclick="toggleVoiceCallMute()">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="call-action-btn speaker" id="voice-speaker-btn" onclick="toggleVoiceCallSpeaker()">
+                <i class="fas fa-volume-up"></i>
+            </button>
+            <button class="call-action-btn end-call" onclick="endVoiceCall()">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Video Call Screen -->
+    <div id="video-call-screen" class="video-call-screen">
+        <div class="video-call-main">
+            <video id="video-call-remote" autoplay playsinline></video>
+        </div>
+        <div class="video-call-pip" id="video-call-pip">
+            <video id="video-call-local" autoplay playsinline muted></video>
+        </div>
+        <div class="video-call-header">
+            <div class="video-call-info">
+                <div class="video-call-avatar-small" id="video-call-avatar">?</div>
+                <div>
+                    <div class="video-call-name" id="video-call-name">Unknown</div>
+                    <div class="video-call-duration" id="video-call-duration">Connecting...</div>
+                </div>
+            </div>
+            <div class="call-quality good" id="video-call-quality">
+                <div class="call-quality-bar"></div>
+                <div class="call-quality-bar"></div>
+                <div class="call-quality-bar"></div>
+                <div class="call-quality-bar"></div>
+            </div>
+        </div>
+        <div class="video-call-controls">
+            <button class="video-control-btn" id="video-flip-btn" onclick="flipVideoCamera()">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+            <button class="video-control-btn" id="video-mute-btn" onclick="toggleVideoCallMute()">
+                <i class="fas fa-microphone"></i>
+            </button>
+            <button class="video-control-btn" id="video-toggle-btn" onclick="toggleVideoCallCamera()">
+                <i class="fas fa-video"></i>
+            </button>
+            <button class="video-control-btn end" onclick="endVideoCall()">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Incoming Call Screen (Full Screen) -->
+    <div id="incoming-call-screen" class="call-screen">
+        <div class="call-avatar-container">
+            <div class="call-pulse ring-1"></div>
+            <div class="call-pulse ring-2"></div>
+            <div class="call-pulse ring-3"></div>
+            <div class="call-avatar" id="incoming-call-avatar">?</div>
+        </div>
+        <div class="call-info">
+            <div class="call-name" id="incoming-call-name">Unknown</div>
+            <div class="call-status" id="incoming-call-type">
+                <i class="fas fa-phone"></i>
+                <span>Voice Call</span>
+            </div>
+        </div>
+        <div class="incoming-call-actions" style="margin-top: auto; padding-bottom: 60px;">
+            <div class="incoming-action-group">
+                <button class="call-action-btn end-call" onclick="declineIncomingCall()">
+                    <i class="fas fa-phone-slash"></i>
+                </button>
+                <span class="incoming-action-label">Decline</span>
+            </div>
+            <div class="incoming-action-group">
+                <button class="call-action-btn accept-call" onclick="acceptIncomingCall()">
+                    <i class="fas fa-phone"></i>
+                </button>
+                <span class="incoming-action-label">Accept</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incoming Call Mini Notification -->
+    <div id="incoming-call-mini" class="incoming-call-mini">
+        <div class="incoming-call-mini-avatar" id="incoming-call-mini-avatar">?</div>
+        <div class="incoming-call-mini-info">
+            <div class="incoming-call-mini-name" id="incoming-call-mini-name">Unknown</div>
+            <div class="incoming-call-mini-type" id="incoming-call-mini-type">Voice Call</div>
+        </div>
+        <div class="incoming-call-mini-actions">
+            <button class="incoming-call-mini-btn decline" onclick="declineIncomingCall()">
+                <i class="fas fa-phone-slash"></i>
+            </button>
+            <button class="incoming-call-mini-btn accept" onclick="acceptIncomingCall()">
+                <i class="fas fa-phone"></i>
+            </button>
+        </div>
     </div>
 
     <!-- Delete Confirmation Modal -->
@@ -1590,11 +2249,14 @@
                         <i class="fas fa-circle text-[6px] mr-1"></i><span id="global-online-count">0</span> Online
                     </div>
                 </div>
-                <p class="text-[10px] mb-3" style="color: var(--color-text-secondary)">Join the global chat room. Text only - no video/voice calls. Chat with everyone!</p>
+                <p class="text-[10px] mb-3" style="color: var(--color-text-secondary)">Join the global chat room. Text only - no video/voice calls. Chat with everyone on this device/browser!</p>
                 <button onclick="joinGlobalRoom()" id="btn-global-room" class="w-full py-3 rounded-xl text-white font-bold text-sm transition-all hover:scale-[1.02] shadow-lg flex items-center justify-center gap-2" style="background: linear-gradient(135deg, #6366f1, #a855f7)">
                     <i class="fas fa-door-open"></i>
                     <span>Join UChat All</span>
                 </button>
+                <p class="text-[9px] mt-2 text-center" style="color: var(--color-text-secondary)">
+                    <i class="fas fa-info-circle mr-1"></i> Share your ID with friends to connect
+                </p>
             </div>
 
             <!-- Host Actions --> 
@@ -1946,6 +2608,7 @@
         let connections = []; 
         let hostConn = null; 
         let calls = [];
+        let peerCalls = {}; // Store calls by peer ID for WhatsApp-style call management
         let isHost = false;
         let isScreenSharing = false;
         let mediaRecorder;
@@ -1968,8 +2631,6 @@
         let isPublicAccount = localStorage.getItem('uchat_public') === 'true'; // Default: Private
         let isInGlobalRoom = false; // UChat All global room state
         let globalRoomUsers = {}; // Track all users in global room {peerId: {name, joinTime}}
-        let globalRoomConn = null; // Connection to global room coordinator
-        const GLOBAL_ROOM_ID = 'uchat-global-room-2026'; // Fixed global room identifier
         
         // === ADVANCED PRIVACY SETTINGS ===
         let privacySettings = {
@@ -1991,6 +2652,13 @@
             'royal': 'Royal Purple',
             'coral': 'Coral Sunset'
         };
+        
+        // === SIGNALING SERVER CONFIGURATION ===
+        const SIGNALING_SERVER_URL = 'wss://uchat-backend-73bc0a77e5a3.herokuapp.com'; // Production: wss://api.u-chat.app
+        const SIGNALING_SERVER_HTTP = 'https://uchat-backend-73bc0a77e5a3.herokuapp.com'; // For HTTP API calls
+        let signalingWS = null; // WebSocket connection to signaling server
+        let signalingConnected = false;
+        let signalingHeartbeat = null;
         
         // === NEW HIGH PERFORMANCE FEATURES ===
         let messageHistory = []; // Store all messages for search
@@ -2573,6 +3241,12 @@
                     showToast(`Connected! ID: ${id}`, "success");
                     if(pendingInvite) processPendingInvite();
                     flushOfflineQueue(); // Send any queued messages
+                    
+                    // Connect to signaling server after PeerJS is ready
+                    connectToSignalingServer();
+                    
+                    // Initialize call ringtone
+                    initCallRingtone();
                 });
                 peer.on('connection', handleIncomingConnection);
                 peer.on('call', handleIncomingCall);
@@ -2602,9 +3276,208 @@
                     }
                     else { showToast("Error: " + err.type, "error"); }
                 });
+                
+                // Clean up when user leaves or closes tab
+                window.addEventListener('beforeunload', () => {
+                    if (isInGlobalRoom) {
+                        removeGlobalRoomPresence();
+                    }
+                });
+                
             } catch (e) {
                 console.error('Failed to initialize PeerJS:', e);
                 showToast("Failed to initialize. Please refresh.", "error");
+            }
+        }
+        
+        // === SIGNALING SERVER CONNECTION ===
+        function connectToSignalingServer() {
+            if (signalingWS && signalingWS.readyState === WebSocket.OPEN) {
+                return; // Already connected
+            }
+            
+            try {
+                // For development, use localhost; for production, use api.u-chat.app
+                const wsUrl = window.location.hostname === 'localhost' 
+                    ? 'ws://localhost:3000' 
+                    : SIGNALING_SERVER_URL;
+                    
+                signalingWS = new WebSocket(wsUrl);
+                
+                signalingWS.onopen = () => {
+                    console.log('[Signaling] Connected to server');
+                    signalingConnected = true;
+                    
+                    // Register with the server
+                    signalingWS.send(JSON.stringify({
+                        type: 'register',
+                        peerId: peer.id,
+                        name: myName,
+                        isPublic: isPublicAccount
+                    }));
+                    
+                    // Start heartbeat
+                    signalingHeartbeat = setInterval(() => {
+                        if (signalingWS.readyState === WebSocket.OPEN) {
+                            signalingWS.send(JSON.stringify({ type: 'heartbeat' }));
+                        }
+                    }, 25000);
+                };
+                
+                signalingWS.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleSignalingMessage(data);
+                    } catch (e) {
+                        console.error('[Signaling] Failed to parse message:', e);
+                    }
+                };
+                
+                signalingWS.onclose = () => {
+                    console.log('[Signaling] Disconnected from server');
+                    signalingConnected = false;
+                    clearInterval(signalingHeartbeat);
+                    
+                    // Reconnect after 5 seconds
+                    setTimeout(() => {
+                        if (!signalingConnected) {
+                            connectToSignalingServer();
+                        }
+                    }, 5000);
+                };
+                
+                signalingWS.onerror = (error) => {
+                    console.error('[Signaling] WebSocket error:', error);
+                };
+            } catch (e) {
+                console.error('[Signaling] Failed to connect:', e);
+            }
+        }
+        
+        function handleSignalingMessage(data) {
+            switch (data.type) {
+                case 'welcome':
+                    console.log('[Signaling] Welcome:', data.message);
+                    break;
+                    
+                case 'registered':
+                    console.log('[Signaling] Registered with server');
+                    break;
+                    
+                case 'heartbeat-ack':
+                    // Heartbeat acknowledged
+                    break;
+                    
+                case 'global-room-joined':
+                    // Successfully joined global room via signaling server
+                    globalRoomUsers = {};
+                    Object.entries(data.users).forEach(([peerId, info]) => {
+                        globalRoomUsers[peerId] = info;
+                        if (peerId !== peer.id) {
+                            connectToGlobalPeer(peerId);
+                        }
+                    });
+                    updateGlobalRoomUI();
+                    appendSystemMessage(`🌍 Welcome to UChat All! ${data.count} users online.`);
+                    break;
+                    
+                case 'global-room-user-joined':
+                    // New user joined global room
+                    globalRoomUsers[data.peerId] = { name: data.name, joinTime: Date.now() };
+                    updateGlobalRoomUI();
+                    appendSystemMessage(`👋 ${data.name} joined UChat All`);
+                    
+                    // Connect to new user
+                    connectToGlobalPeer(data.peerId);
+                    break;
+                    
+                case 'global-room-user-left':
+                    // User left global room
+                    if (globalRoomUsers[data.peerId]) {
+                        const userName = globalRoomUsers[data.peerId].name;
+                        delete globalRoomUsers[data.peerId];
+                        updateGlobalRoomUI();
+                        appendSystemMessage(`👋 ${userName} left UChat All`);
+                    }
+                    break;
+                    
+                case 'global-message':
+                    // Message from global room (relayed via server for offline users)
+                    if (data.from !== peer.id) {
+                        appendMessage(data.content, 'in', data.sender, null, data.msgId);
+                    }
+                    break;
+                    
+                case 'incoming-call':
+                    // Incoming call via signaling server
+                    showIncomingCallScreen({
+                        callId: data.callId,
+                        callType: data.callType,
+                        name: data.callerName,
+                        peerId: data.from
+                    });
+                    break;
+                    
+                case 'call-accepted':
+                    // Our call was accepted
+                    if (currentCallType === 'voice') {
+                        showVoiceCallScreen(connectedPeerName, 'connected');
+                    }
+                    break;
+                    
+                case 'call-declined':
+                    // Our call was declined
+                    hideVoiceCallScreen();
+                    hideVideoCallScreen();
+                    showToast("Call declined", "warning");
+                    break;
+                    
+                case 'call-ended':
+                    // Call ended by other party
+                    hideVoiceCallScreen();
+                    hideVideoCallScreen();
+                    hideIncomingCallScreen();
+                    showToast("Call ended", "info");
+                    break;
+                    
+                case 'signal-offer':
+                    // WebRTC offer via signaling server
+                    // Handle if needed for NAT traversal
+                    break;
+                    
+                case 'signal-answer':
+                    // WebRTC answer via signaling server
+                    break;
+                    
+                case 'signal-ice':
+                    // ICE candidate via signaling server
+                    break;
+                    
+                case 'server-shutdown':
+                    showToast("Server is restarting...", "warning");
+                    break;
+            }
+        }
+        
+        function sendToSignalingServer(data) {
+            if (signalingWS && signalingWS.readyState === WebSocket.OPEN) {
+                signalingWS.send(JSON.stringify(data));
+            }
+        }
+        
+        // Check if a peer is online via signaling server
+        async function checkPeerOnline(peerId) {
+            try {
+                const httpUrl = window.location.hostname === 'localhost' 
+                    ? `http://localhost:3000/api/check-online?peerId=${peerId}`
+                    : `${SIGNALING_SERVER_HTTP}/api/check-online?peerId=${peerId}`;
+                    
+                const response = await fetch(httpUrl);
+                const data = await response.json();
+                return data.online;
+            } catch (e) {
+                console.log('[Signaling] Could not check peer status:', e);
+                return null; // Unknown
             }
         }
         
@@ -2736,14 +3609,44 @@
             if (meta.type === 'global-room' || meta.isGlobalRoom) {
                 if (isInGlobalRoom) {
                     conn.metadata = { ...meta, isGlobalRoom: true };
-                    setupDataConnection(conn);
-                    connections.push(conn);
                     
-                    // Add to global users and notify
+                    // Add to connections if not already there
+                    if (!connections.find(c => c.peer === conn.peer)) {
+                        connections.push(conn);
+                    }
+                    
+                    // Setup global connection handlers
                     conn.on('open', () => {
-                        const payload = { type: 'global-join', peerId: peer.id, name: myName };
-                        conn.send(payload);
+                        // Add user to global room users
+                        if (meta.name && !globalRoomUsers[conn.peer]) {
+                            globalRoomUsers[conn.peer] = { name: meta.name, joinTime: Date.now() };
+                            appendSystemMessage(`🌍 ${meta.name} joined UChat All`);
+                            updateGlobalRoomUI();
+                        }
+                        
+                        // Send our info and user list
+                        conn.send({ 
+                            type: 'global-join', 
+                            peerId: peer.id, 
+                            name: myName,
+                            users: globalRoomUsers
+                        });
                     });
+                    
+                    conn.on('data', (data) => {
+                        handleGlobalRoomMessage(data, conn);
+                    });
+                    
+                    conn.on('close', () => {
+                        connections = connections.filter(c => c.peer !== conn.peer);
+                        if (globalRoomUsers[conn.peer]) {
+                            const userName = globalRoomUsers[conn.peer].name;
+                            delete globalRoomUsers[conn.peer];
+                            appendSystemMessage(`👋 ${userName} left UChat All`);
+                            updateGlobalRoomUI();
+                        }
+                    });
+                    
                     return;
                 } else {
                     conn.on('open', () => { conn.send({type:'system', msg:'User not in global room'}); setTimeout(()=>conn.close(),500); });
@@ -2884,6 +3787,43 @@
                     // Update read status
                     updateReadReceipt(data.msgId, 'read');
                     break;
+                    
+                // WhatsApp-Style Call Handling
+                case 'incoming-call':
+                    // Show incoming call notification
+                    showIncomingCallScreen({
+                        callType: data.callType,
+                        name: data.name,
+                        peerId: data.peerId
+                    });
+                    connectedPeerName = data.name;
+                    break;
+                    
+                case 'call-accepted':
+                    // Peer accepted our call
+                    if (currentCallType === 'voice') {
+                        showVoiceCallScreen(connectedPeerName, 'connected');
+                    } else if (currentCallType === 'video') {
+                        // Video will show when stream arrives
+                    }
+                    showToast("Call connected", "success");
+                    break;
+                    
+                case 'call-declined':
+                    // Peer declined our call
+                    hideVoiceCallScreen();
+                    hideVideoCallScreen();
+                    showToast("Call declined", "warning");
+                    break;
+                    
+                case 'call-ended':
+                    // Peer ended the call
+                    hideVoiceCallScreen();
+                    hideVideoCallScreen();
+                    hideIncomingCallScreen();
+                    showToast("Call ended", "info");
+                    break;
+                    
                 case 'meta':
                     if(data.sub === 'handshake') {
                         // Add to participants
@@ -3039,10 +3979,392 @@
         }
         
         // Voice Call Only (Audio without Video)
+        // WhatsApp-Style Call State Management
+        let currentCallType = null; // 'voice' or 'video'
+        let callTimerInterval = null;
+        let callStartTime = null;
+        let callRingtone = null;
+        let incomingCallData = null;
+        let isCallMuted = false;
+        let isSpeakerOn = false;
+        let isVideoOn = true;
+        
+        // Initialize ringtone audio
+        function initCallRingtone() {
+            // Create audio context for ringtone (using Web Audio API for better control)
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                callRingtone = {
+                    play: () => {
+                        // Simple ringtone using oscillator
+                        const osc = audioCtx.createOscillator();
+                        const gain = audioCtx.createGain();
+                        osc.connect(gain);
+                        gain.connect(audioCtx.destination);
+                        osc.frequency.value = 440;
+                        osc.type = 'sine';
+                        gain.gain.value = 0.1;
+                        osc.start();
+                        setTimeout(() => {
+                            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.5);
+                            setTimeout(() => osc.stop(), 500);
+                        }, 200);
+                    },
+                    stop: () => {}
+                };
+            } catch(e) {
+                console.log('Audio context not available');
+            }
+        }
+        
+        // Format call duration
+        function formatCallDuration(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // Start call timer
+        function startCallTimer() {
+            callStartTime = Date.now();
+            callTimerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - callStartTime) / 1000);
+                const timerText = formatCallDuration(elapsed);
+                
+                if (currentCallType === 'voice') {
+                    document.getElementById('voice-call-timer').textContent = timerText;
+                } else if (currentCallType === 'video') {
+                    document.getElementById('video-call-duration').textContent = timerText;
+                }
+            }, 1000);
+        }
+        
+        // Stop call timer
+        function stopCallTimer() {
+            if (callTimerInterval) {
+                clearInterval(callTimerInterval);
+                callTimerInterval = null;
+            }
+            callStartTime = null;
+        }
+        
+        // Show Voice Call Screen
+        function showVoiceCallScreen(peerName, status = 'calling') {
+            currentCallType = 'voice';
+            const avatar = peerName ? peerName.charAt(0).toUpperCase() : '?';
+            
+            document.getElementById('voice-call-avatar').textContent = avatar;
+            document.getElementById('voice-call-name').textContent = peerName || 'Unknown';
+            
+            const statusEl = document.getElementById('voice-call-status');
+            const timerEl = document.getElementById('voice-call-timer');
+            
+            if (status === 'calling') {
+                statusEl.innerHTML = '<span>Calling</span><div class="connecting-dots"><span></span><span></span><span></span></div>';
+                statusEl.classList.remove('hidden');
+                timerEl.classList.add('hidden');
+            } else if (status === 'ringing') {
+                statusEl.innerHTML = '<span>Ringing</span><div class="connecting-dots"><span></span><span></span><span></span></div>';
+                statusEl.classList.remove('hidden');
+                timerEl.classList.add('hidden');
+            } else if (status === 'connected') {
+                statusEl.classList.add('hidden');
+                timerEl.classList.remove('hidden');
+                startCallTimer();
+            }
+            
+            document.getElementById('voice-call-screen').classList.add('active');
+        }
+        
+        // Hide Voice Call Screen
+        function hideVoiceCallScreen() {
+            document.getElementById('voice-call-screen').classList.remove('active');
+            stopCallTimer();
+            currentCallType = null;
+            isCallMuted = false;
+            isSpeakerOn = false;
+            
+            // Reset button states
+            document.getElementById('voice-mute-btn').classList.remove('active');
+            document.getElementById('voice-speaker-btn').classList.remove('active');
+        }
+        
+        // Show Video Call Screen
+        function showVideoCallScreen(peerName, localStream, remoteStream) {
+            currentCallType = 'video';
+            const avatar = peerName ? peerName.charAt(0).toUpperCase() : '?';
+            
+            document.getElementById('video-call-avatar').textContent = avatar;
+            document.getElementById('video-call-name').textContent = peerName || 'Unknown';
+            document.getElementById('video-call-duration').textContent = 'Connecting...';
+            
+            // Set local video
+            if (localStream) {
+                const localVideo = document.getElementById('video-call-local');
+                localVideo.srcObject = localStream;
+                localVideo.muted = true;
+            }
+            
+            // Set remote video if available
+            if (remoteStream) {
+                const remoteVideo = document.getElementById('video-call-remote');
+                remoteVideo.srcObject = remoteStream;
+                startCallTimer();
+                document.getElementById('video-call-duration').textContent = '00:00';
+            }
+            
+            document.getElementById('video-call-screen').classList.add('active');
+        }
+        
+        // Hide Video Call Screen
+        function hideVideoCallScreen() {
+            document.getElementById('video-call-screen').classList.remove('active');
+            stopCallTimer();
+            currentCallType = null;
+            isCallMuted = false;
+            isVideoOn = true;
+            
+            // Reset button states
+            document.getElementById('video-mute-btn').classList.remove('active');
+            document.getElementById('video-toggle-btn').classList.remove('active');
+        }
+        
+        // Show Incoming Call Screen
+        function showIncomingCallScreen(callData) {
+            incomingCallData = callData;
+            const peerName = callData.name || callData.peerId || 'Unknown';
+            const avatar = peerName.charAt(0).toUpperCase();
+            const callType = callData.callType === 'video' ? 'Video Call' : 'Voice Call';
+            const icon = callData.callType === 'video' ? 'fa-video' : 'fa-phone';
+            
+            // Update full screen incoming call
+            document.getElementById('incoming-call-avatar').textContent = avatar;
+            document.getElementById('incoming-call-name').textContent = peerName;
+            document.getElementById('incoming-call-type').innerHTML = `<i class="fas ${icon}"></i><span>${callType}</span>`;
+            
+            // Update mini notification
+            document.getElementById('incoming-call-mini-avatar').textContent = avatar;
+            document.getElementById('incoming-call-mini-name').textContent = peerName;
+            document.getElementById('incoming-call-mini-type').textContent = callType;
+            
+            // Show mini notification (can be changed to full screen)
+            document.getElementById('incoming-call-mini').classList.add('active');
+            
+            // Play ringtone
+            if (callRingtone) {
+                const ringInterval = setInterval(() => {
+                    if (!document.getElementById('incoming-call-mini').classList.contains('active')) {
+                        clearInterval(ringInterval);
+                        return;
+                    }
+                    callRingtone.play();
+                }, 1500);
+            }
+        }
+        
+        // Hide Incoming Call Screen
+        function hideIncomingCallScreen() {
+            document.getElementById('incoming-call-screen').classList.remove('active');
+            document.getElementById('incoming-call-mini').classList.remove('active');
+            incomingCallData = null;
+        }
+        
+        // Voice Call Button Actions
+        function toggleVoiceCallMute() {
+            isCallMuted = !isCallMuted;
+            const btn = document.getElementById('voice-mute-btn');
+            
+            if (isCallMuted) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+                if (localStream) {
+                    localStream.getAudioTracks().forEach(t => t.enabled = false);
+                }
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fas fa-microphone"></i>';
+                if (localStream) {
+                    localStream.getAudioTracks().forEach(t => t.enabled = true);
+                }
+            }
+        }
+        
+        function toggleVoiceCallSpeaker() {
+            isSpeakerOn = !isSpeakerOn;
+            const btn = document.getElementById('voice-speaker-btn');
+            
+            if (isSpeakerOn) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fas fa-volume-up"></i>';
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fas fa-volume-down"></i>';
+            }
+            
+            // Note: Speaker toggle is mostly relevant for mobile devices
+            showToast(isSpeakerOn ? "Speaker on" : "Speaker off", "info");
+        }
+        
+        function endVoiceCall() {
+            hideVoiceCallScreen();
+            
+            // Stop local stream
+            if (localStream) {
+                localStream.getTracks().forEach(t => t.stop());
+                localStream = null;
+            }
+            
+            // Close peer calls
+            Object.values(peerCalls).forEach(call => call.close());
+            peerCalls = {};
+            
+            // Broadcast call ended
+            broadcastData({ type: 'call-ended', callType: 'voice' });
+            
+            showToast("Call ended", "info");
+        }
+        
+        // Video Call Button Actions
+        function toggleVideoCallMute() {
+            isCallMuted = !isCallMuted;
+            const btn = document.getElementById('video-mute-btn');
+            
+            if (isCallMuted) {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fas fa-microphone-slash"></i>';
+                if (localStream) {
+                    localStream.getAudioTracks().forEach(t => t.enabled = false);
+                }
+            } else {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fas fa-microphone"></i>';
+                if (localStream) {
+                    localStream.getAudioTracks().forEach(t => t.enabled = true);
+                }
+            }
+        }
+        
+        function toggleVideoCallCamera() {
+            isVideoOn = !isVideoOn;
+            const btn = document.getElementById('video-toggle-btn');
+            
+            if (isVideoOn) {
+                btn.classList.remove('active');
+                btn.innerHTML = '<i class="fas fa-video"></i>';
+                if (localStream) {
+                    localStream.getVideoTracks().forEach(t => t.enabled = true);
+                }
+            } else {
+                btn.classList.add('active');
+                btn.innerHTML = '<i class="fas fa-video-slash"></i>';
+                if (localStream) {
+                    localStream.getVideoTracks().forEach(t => t.enabled = false);
+                }
+            }
+        }
+        
+        async function flipVideoCamera() {
+            if (!localStream) return;
+            
+            try {
+                const currentTrack = localStream.getVideoTracks()[0];
+                const currentSettings = currentTrack.getSettings();
+                const newFacingMode = currentSettings.facingMode === 'user' ? 'environment' : 'user';
+                
+                currentTrack.stop();
+                
+                const newStream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: newFacingMode },
+                    audio: false
+                });
+                
+                const newTrack = newStream.getVideoTracks()[0];
+                localStream.removeTrack(currentTrack);
+                localStream.addTrack(newTrack);
+                
+                // Update local video
+                document.getElementById('video-call-local').srcObject = localStream;
+                
+                // Update peer connection
+                Object.values(peerCalls).forEach(call => {
+                    const senders = call.peerConnection?.getSenders();
+                    senders?.forEach(sender => {
+                        if (sender.track?.kind === 'video') {
+                            sender.replaceTrack(newTrack);
+                        }
+                    });
+                });
+                
+                showToast("Camera flipped", "success");
+            } catch(e) {
+                console.error('Error flipping camera:', e);
+                showToast("Cannot flip camera", "error");
+            }
+        }
+        
+        function endVideoCall() {
+            hideVideoCallScreen();
+            
+            // Stop local stream
+            if (localStream) {
+                localStream.getTracks().forEach(t => t.stop());
+                localStream = null;
+            }
+            
+            // Close peer calls
+            Object.values(peerCalls).forEach(call => call.close());
+            peerCalls = {};
+            
+            // Hide video area in main chat
+            setVideoLayout(false);
+            document.getElementById('local-video-card').classList.add('hidden');
+            
+            // Broadcast call ended
+            broadcastData({ type: 'call-ended', callType: 'video' });
+            
+            showToast("Call ended", "info");
+        }
+        
+        // Incoming Call Actions
+        function acceptIncomingCall() {
+            if (!incomingCallData) return;
+            
+            hideIncomingCallScreen();
+            
+            // Accept based on call type
+            if (incomingCallData.callType === 'video') {
+                // Start video and show video call screen
+                showVideoCallScreen(incomingCallData.name, null, null);
+                startLocalVideo().then(() => {
+                    if (localStream) {
+                        document.getElementById('video-call-local').srcObject = localStream;
+                    }
+                });
+            } else {
+                // Start voice call
+                showVoiceCallScreen(incomingCallData.name, 'connected');
+                startVoiceOnlyStream();
+            }
+        }
+        
+        function declineIncomingCall() {
+            hideIncomingCallScreen();
+            
+            // Send decline message to peer
+            if (incomingCallData && connections.length > 0) {
+                broadcastData({ type: 'call-declined', peerId: peer.id });
+            }
+            
+            showToast("Call declined", "info");
+        }
+
         async function startVoiceCallDirect() {
             const id = document.getElementById('remote-id').value.trim();
             if(!id) return showToast("Enter Peer ID", "error");
             if(id === peer.id) return showToast("Cannot call yourself", "error");
+            
+            // Show WhatsApp-style calling screen
+            showVoiceCallScreen(id, 'calling');
             
             // First establish connection if not already connected
             if (myMode !== 'direct' || connections.length === 0) {
@@ -3050,6 +4372,8 @@
                     showCustomConfirm("Start New Call?", "Current session will be closed.", () => { 
                         resetSession(); 
                         initDirectWithVoiceCall(id); 
+                    }, () => {
+                        hideVoiceCallScreen();
                     }); 
                     return; 
                 }
@@ -3057,6 +4381,7 @@
             } else {
                 // Already connected, start voice call
                 await startVoiceOnlyStream();
+                showVoiceCallScreen(connectedPeerName || id, 'connected');
             }
         }
         
@@ -3064,16 +4389,20 @@
             isHost = false; myMode = 'direct';
             document.getElementById('btn-voice-call').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             
-            const conn = peer.connect(id, { metadata: { type: 'direct', callType: 'voice' } });
+            const conn = peer.connect(id, { metadata: { type: 'direct', callType: 'voice', name: myName } });
             
             // Set timeout to detect if user is offline
             const connectionTimeout = setTimeout(() => {
                 if (!conn.open) {
+                    hideVoiceCallScreen();
                     showToast("User appears to be offline", "warning");
                     showCustomConfirm(
                         "User Offline", 
                         "The user you're trying to call appears to be offline. Would you like to wait?",
-                        () => { showToast("Waiting for user...", "info"); },
+                        () => { 
+                            showToast("Waiting for user...", "info");
+                            showVoiceCallScreen(id, 'calling');
+                        },
                         () => {
                             conn.close();
                             resetSession();
@@ -3086,6 +4415,13 @@
             conn.on('open', async () => {
                 clearTimeout(connectionTimeout);
                 document.getElementById('btn-voice-call').innerHTML = '<i class="fas fa-phone-alt"></i><span class="text-[10px]">VOICE CALL</span>';
+                
+                // Update call screen status
+                showVoiceCallScreen(connectedPeerName || id, 'ringing');
+                
+                // Send call notification to peer
+                conn.send({ type: 'incoming-call', callType: 'voice', name: myName, peerId: peer.id });
+                
                 await startVoiceOnlyStream();
             });
             
@@ -3121,9 +4457,15 @@
                     handleCall(call);
                 }
                 
+                // Update call screen to connected
+                if (currentCallType === 'voice') {
+                    showVoiceCallScreen(connectedPeerName || 'Peer', 'connected');
+                }
+                
                 showToast("Voice call started", "success");
             } catch (e) {
                 console.error('Microphone error:', e);
+                hideVoiceCallScreen();
                 showToast("Microphone access denied", "error");
             }
         }
@@ -3147,6 +4489,7 @@
             } else {
                 // Already connected, start video call
                 await startLocalVideo();
+                showVideoCallScreen(connectedPeerName || id, localStream, null);
             }
         }
         
@@ -3154,7 +4497,7 @@
             isHost = false; myMode = 'direct';
             document.getElementById('btn-video-call').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             
-            const conn = peer.connect(id, { metadata: { type: 'direct', callType: 'video' } });
+            const conn = peer.connect(id, { metadata: { type: 'direct', callType: 'video', name: myName } });
             
             // Set timeout to detect if user is offline
             const connectionTimeout = setTimeout(() => {
@@ -3176,7 +4519,14 @@
             conn.on('open', async () => {
                 clearTimeout(connectionTimeout);
                 document.getElementById('btn-video-call').innerHTML = '<i class="fas fa-video"></i><span class="text-[10px]">VIDEO CALL</span>';
+                
+                // Send call notification to peer
+                conn.send({ type: 'incoming-call', callType: 'video', name: myName, peerId: peer.id });
+                
                 await startLocalVideo();
+                
+                // Show video call screen
+                showVideoCallScreen(connectedPeerName || id, localStream, null);
             });
             
             setupDataConnection(conn); 
@@ -3293,6 +4643,8 @@
         
         function handleCall(call) {
             calls.push(call);
+            peerCalls[call.peer] = call; // Store for WhatsApp-style call management
+            
             const videoId = `video-${call.peer}`;
             if(!document.getElementById(videoId)) addRemoteVideoElement(videoId, call.peer);
             
@@ -3302,8 +4654,28 @@
                     vid.srcObject = remoteStream;
                     vid.play().catch(e => console.log('Autoplay blocked'));
                 }
+                
+                // Update WhatsApp-style Video Call Screen with remote stream
+                if (currentCallType === 'video' && remoteStream.getVideoTracks().length > 0) {
+                    const remoteVideo = document.getElementById('video-call-remote');
+                    if (remoteVideo) {
+                        remoteVideo.srcObject = remoteStream;
+                        document.getElementById('video-call-duration').textContent = '00:00';
+                        if (!callTimerInterval) startCallTimer();
+                    }
+                }
+                
+                // Update Voice Call Screen when connected
+                if (currentCallType === 'voice' && remoteStream.getAudioTracks().length > 0) {
+                    showVoiceCallScreen(connectedPeerName || 'Peer', 'connected');
+                }
             });
-            call.on('close', () => { removeRemoteVideo(call.peer); calls = calls.filter(c => c.peer !== call.peer); });
+            
+            call.on('close', () => { 
+                removeRemoteVideo(call.peer); 
+                calls = calls.filter(c => c.peer !== call.peer);
+                delete peerCalls[call.peer];
+            });
             call.on('error', (err) => { console.error('Call error:', err); });
         }
         
@@ -4529,6 +5901,12 @@
         }
         
         // UChat All - Global Room Functions
+        // Global Room works by using PeerJS IDs - each user tries to connect to known global room peers
+        const GLOBAL_ROOM_PREFIX = 'uchat-global-';
+        let globalPeerList = []; // Known peers in global room
+        let isGlobalCoordinator = false;
+        let globalDiscoveryInterval = null;
+        
         function joinGlobalRoom() {
             if (isInGlobalRoom) {
                 leaveGlobalRoom();
@@ -4559,6 +5937,7 @@
             isInGlobalRoom = true;
             myMode = 'global';
             globalRoomUsers = {};
+            globalPeerList = [];
             
             // Add self to global users
             globalRoomUsers[peer.id] = { name: myName, joinTime: Date.now() };
@@ -4567,29 +5946,184 @@
             updateUIForMode('global');
             document.getElementById('btn-global-room').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Connecting...';
             
-            // Try to connect to existing global room users or become coordinator
-            tryConnectToGlobalRoom();
+            // Try signaling server first (for cross-browser/cross-device discovery)
+            if (signalingConnected) {
+                sendToSignalingServer({
+                    type: 'join-global-room',
+                    name: myName
+                });
+            }
+            
+            // Also use localStorage fallback for same-device discovery
+            saveGlobalRoomPresence();
+            
+            // Start discovery process
+            startGlobalRoomDiscovery();
+            
+            showToast("🌍 Joining UChat All...", "info");
         }
         
-        function tryConnectToGlobalRoom() {
-            // Use a simple broadcast mechanism - try to find other users
-            // In a real implementation, you'd use a signaling server
-            // For now, we simulate with local peer discovery
+        function saveGlobalRoomPresence() {
+            // Save our presence to localStorage (works for same browser/device)
+            // In production, this would be a signaling server
+            const globalUsers = JSON.parse(localStorage.getItem('uchat_global_users') || '{}');
+            globalUsers[peer.id] = {
+                name: myName,
+                joinTime: Date.now(),
+                lastSeen: Date.now()
+            };
+            localStorage.setItem('uchat_global_users', JSON.stringify(globalUsers));
+        }
+        
+        function removeGlobalRoomPresence() {
+            const globalUsers = JSON.parse(localStorage.getItem('uchat_global_users') || '{}');
+            delete globalUsers[peer.id];
+            localStorage.setItem('uchat_global_users', JSON.stringify(globalUsers));
+        }
+        
+        function startGlobalRoomDiscovery() {
+            // Initial discovery
+            discoverGlobalRoomPeers();
             
-            showToast("🌍 Welcome to UChat All!", "success");
-            document.getElementById('btn-global-room').innerHTML = '<i class="fas fa-sign-out-alt mr-2"></i>Leave UChat All';
-            document.getElementById('btn-global-room').style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+            // Continue discovery every 5 seconds
+            globalDiscoveryInterval = setInterval(() => {
+                if (isInGlobalRoom) {
+                    saveGlobalRoomPresence(); // Keep presence alive
+                    discoverGlobalRoomPeers();
+                    cleanupOldGlobalUsers();
+                }
+            }, 5000);
             
+            // Show connected state after short delay
+            setTimeout(() => {
+                if (isInGlobalRoom) {
+                    document.getElementById('btn-global-room').innerHTML = '<i class="fas fa-sign-out-alt mr-2"></i>Leave UChat All';
+                    document.getElementById('btn-global-room').style.background = 'linear-gradient(135deg, #ef4444, #dc2626)';
+                    updateGlobalRoomUI();
+                    
+                    const userCount = Object.keys(globalRoomUsers).length;
+                    if (userCount <= 1) {
+                        appendSystemMessage("🌍 Welcome to UChat All! You're the first one here. Share your ID with friends to chat!");
+                    } else {
+                        appendSystemMessage(`🌍 Welcome to UChat All! ${userCount} users online.`);
+                    }
+                }
+            }, 1500);
+        }
+        
+        function discoverGlobalRoomPeers() {
+            // Get known peers from localStorage
+            const globalUsers = JSON.parse(localStorage.getItem('uchat_global_users') || '{}');
+            
+            // Clean up old entries (older than 30 seconds)
+            const now = Date.now();
+            Object.keys(globalUsers).forEach(peerId => {
+                if (now - globalUsers[peerId].lastSeen > 30000) {
+                    delete globalUsers[peerId];
+                }
+            });
+            localStorage.setItem('uchat_global_users', JSON.stringify(globalUsers));
+            
+            // Try to connect to peers we're not already connected to
+            Object.keys(globalUsers).forEach(peerId => {
+                if (peerId !== peer.id && !connections.find(c => c.peer === peerId)) {
+                    connectToGlobalPeer(peerId);
+                }
+            });
+        }
+        
+        function cleanupOldGlobalUsers() {
+            const now = Date.now();
+            Object.keys(globalRoomUsers).forEach(peerId => {
+                if (peerId !== peer.id) {
+                    const conn = connections.find(c => c.peer === peerId);
+                    if (!conn || !conn.open) {
+                        delete globalRoomUsers[peerId];
+                    }
+                }
+            });
             updateGlobalRoomUI();
+        }
+        
+        function connectToGlobalPeer(peerId) {
+            if (!isInGlobalRoom || peerId === peer.id) return;
             
-            // Listen for incoming global room connections
-            // The peer 'connection' event already handles this
+            // Check if already connected
+            if (connections.find(c => c.peer === peerId)) return;
+            
+            try {
+                const conn = peer.connect(peerId, { 
+                    metadata: { 
+                        type: 'global-room', 
+                        isGlobalRoom: true,
+                        name: myName 
+                    } 
+                });
+                
+                conn.on('open', () => {
+                    conn.metadata = { ...conn.metadata, isGlobalRoom: true };
+                    connections.push(conn);
+                    
+                    // Send join message
+                    conn.send({ 
+                        type: 'global-join', 
+                        peerId: peer.id, 
+                        name: myName,
+                        users: globalRoomUsers
+                    });
+                    
+                    setupGlobalConnection(conn);
+                });
+                
+                conn.on('error', (err) => {
+                    console.log('Global peer connection error:', err);
+                    // Remove from known users if connection failed
+                    const globalUsers = JSON.parse(localStorage.getItem('uchat_global_users') || '{}');
+                    delete globalUsers[peerId];
+                    localStorage.setItem('uchat_global_users', JSON.stringify(globalUsers));
+                });
+            } catch (e) {
+                console.log('Failed to connect to global peer:', e);
+            }
+        }
+        
+        function setupGlobalConnection(conn) {
+            conn.on('data', (data) => {
+                handleGlobalRoomMessage(data, conn);
+            });
+            
+            conn.on('close', () => {
+                // Remove from connections
+                connections = connections.filter(c => c.peer !== conn.peer);
+                
+                // Remove from global users
+                if (globalRoomUsers[conn.peer]) {
+                    const userName = globalRoomUsers[conn.peer].name;
+                    delete globalRoomUsers[conn.peer];
+                    appendSystemMessage(`👋 ${userName} left UChat All`);
+                    updateGlobalRoomUI();
+                }
+            });
         }
         
         function leaveGlobalRoom() {
             if (!isInGlobalRoom) return;
             
-            // Notify other users
+            // Clear discovery interval
+            if (globalDiscoveryInterval) {
+                clearInterval(globalDiscoveryInterval);
+                globalDiscoveryInterval = null;
+            }
+            
+            // Notify signaling server
+            if (signalingConnected) {
+                sendToSignalingServer({ type: 'leave-global-room' });
+            }
+            
+            // Remove our presence from localStorage
+            removeGlobalRoomPresence();
+            
+            // Notify other users via P2P
             const payload = { type: 'global-leave', peerId: peer.id, name: myName };
             broadcastToGlobalRoom(payload);
             
@@ -4601,6 +6135,7 @@
             
             isInGlobalRoom = false;
             globalRoomUsers = {};
+            globalPeerList = [];
             
             resetSession();
             
@@ -4624,11 +6159,19 @@
             switch(data.type) {
                 case 'global-join':
                     // New user joined
-                    globalRoomUsers[data.peerId] = { name: data.name, joinTime: Date.now() };
-                    updateGlobalRoomUI();
-                    appendSystemMessage(`🌍 ${data.name} joined UChat All`);
+                    if (!globalRoomUsers[data.peerId]) {
+                        globalRoomUsers[data.peerId] = { name: data.name, joinTime: Date.now() };
+                        appendSystemMessage(`🌍 ${data.name} joined UChat All`);
+                    }
                     
-                    // Send current user list to new user
+                    // Merge user lists
+                    if (data.users) {
+                        Object.assign(globalRoomUsers, data.users);
+                    }
+                    
+                    updateGlobalRoomUI();
+                    
+                    // Send our user list back
                     conn.send({ type: 'global-users', users: globalRoomUsers });
                     break;
                     
@@ -4642,8 +6185,14 @@
                     break;
                     
                 case 'global-users':
-                    // Received user list
-                    Object.assign(globalRoomUsers, data.users);
+                    // Received user list - merge with ours
+                    if (data.users) {
+                        Object.keys(data.users).forEach(peerId => {
+                            if (!globalRoomUsers[peerId]) {
+                                globalRoomUsers[peerId] = data.users[peerId];
+                            }
+                        });
+                    }
                     updateGlobalRoomUI();
                     break;
                     
@@ -4651,6 +6200,11 @@
                     // Chat message
                     appendMessage(data.content, 'in', data.sender, data.replyTo, data.msgId);
                     if (data.msgId) sendReadReceipt(data.msgId);
+                    break;
+                    
+                case 'global-file':
+                    // File message in global room
+                    handleIncomingFile(data);
                     break;
             }
         }
@@ -4665,8 +6219,14 @@
                 countSpan.innerText = onlineCount;
                 
                 // Update header
-                document.getElementById('header-title').innerText = `🌍 UChat All`;
-                document.getElementById('peer-count').innerText = onlineCount;
+                document.getElementById('header-title').innerText = `🌍 UChat All (${onlineCount})`;
+                
+                // Update status card if visible
+                const peerCount = document.getElementById('peer-count');
+                if (peerCount) peerCount.innerText = onlineCount;
+                
+                // Update participants button
+                document.getElementById('btn-participants').classList.remove('hidden');
             }
         }
         
