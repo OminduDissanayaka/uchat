@@ -2888,8 +2888,18 @@
         };
         
         // === SIGNALING SERVER CONFIGURATION ===
-        const SIGNALING_SERVER_URL = 'wss://uchat-backend-73bc0a77e5a3.herokuapp.com'; // Production: wss://api.u-chat.app
+        // Multiple signaling server options for redundancy
+        const SIGNALING_SERVERS = [
+            'wss://uchat-backend-73bc0a77e5a3.herokuapp.com',
+            'wss://peerjs-server.herokuapp.com',
+            'wss://0.peerjs.com'
+        ];
+        let currentSignalingIndex = 0;
+        const SIGNALING_SERVER_URL = SIGNALING_SERVERS[0]; // Primary
         const SIGNALING_SERVER_HTTP = 'https://uchat-backend-73bc0a77e5a3.herokuapp.com'; // For HTTP API calls
+        
+        // Well-known global room peer IDs for discovery (without signaling server)
+        const GLOBAL_ROOM_BEACONS = ['uchat-global-beacon-1', 'uchat-global-beacon-2', 'uchat-global-beacon-3'];
         let signalingWS = null; // WebSocket connection to signaling server
         let signalingConnected = false;
         let signalingHeartbeat = null;
@@ -3525,22 +3535,43 @@
         }
         
         // === SIGNALING SERVER CONNECTION ===
+        let signalingReconnectTimer = null;
+        
         function connectToSignalingServer() {
             if (signalingWS && signalingWS.readyState === WebSocket.OPEN) {
                 return; // Already connected
             }
             
+            // Clear any pending reconnect
+            if (signalingReconnectTimer) {
+                clearTimeout(signalingReconnectTimer);
+                signalingReconnectTimer = null;
+            }
+            
             try {
-                // For development, use localhost; for production, use api.u-chat.app
+                // Try current signaling server
                 const wsUrl = window.location.hostname === 'localhost' 
                     ? 'ws://localhost:3000' 
-                    : SIGNALING_SERVER_URL;
+                    : SIGNALING_SERVERS[currentSignalingIndex];
+                
+                console.log(`[Signaling] Trying server: ${wsUrl}`);
                     
                 signalingWS = new WebSocket(wsUrl);
                 
+                // Connection timeout
+                const connectionTimeout = setTimeout(() => {
+                    if (signalingWS.readyState !== WebSocket.OPEN) {
+                        console.log('[Signaling] Connection timeout, trying next server...');
+                        signalingWS.close();
+                        tryNextSignalingServer();
+                    }
+                }, 5000);
+                
                 signalingWS.onopen = () => {
+                    clearTimeout(connectionTimeout);
                     console.log('[Signaling] Connected to server');
                     signalingConnected = true;
+                    currentSignalingIndex = 0; // Reset to primary on success
                     
                     // Register with the server
                     signalingWS.send(JSON.stringify({
@@ -3572,20 +3603,31 @@
                     signalingConnected = false;
                     clearInterval(signalingHeartbeat);
                     
-                    // Reconnect after 5 seconds
-                    setTimeout(() => {
-                        if (!signalingConnected) {
-                            connectToSignalingServer();
-                        }
-                    }, 5000);
+                    // Try to reconnect
+                    signalingReconnectTimer = setTimeout(() => {
+                        tryNextSignalingServer();
+                    }, 3000);
                 };
                 
                 signalingWS.onerror = (error) => {
                     console.error('[Signaling] WebSocket error:', error);
+                    tryNextSignalingServer();
                 };
             } catch (e) {
                 console.error('[Signaling] Failed to connect:', e);
+                tryNextSignalingServer();
             }
+        }
+        
+        function tryNextSignalingServer() {
+            currentSignalingIndex++;
+            if (currentSignalingIndex >= SIGNALING_SERVERS.length) {
+                currentSignalingIndex = 0;
+                console.log('[Signaling] All servers failed, using P2P-only mode for UChat All');
+                // Continue without signaling server - use PeerJS-based discovery
+                return;
+            }
+            signalingReconnectTimer = setTimeout(connectToSignalingServer, 1000);
         }
         
         function handleSignalingMessage(data) {
@@ -3915,7 +3957,11 @@
         }
         function initDirect(id) {
             isHost = false; myMode = 'direct'; document.getElementById('btn-direct').innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-            const conn = peer.connect(id, { metadata: { type: 'direct' } });
+            
+            // Store the peer ID we're connecting to
+            const targetPeerId = id;
+            
+            const conn = peer.connect(id, { metadata: { type: 'direct', name: myName } });
             
             // Set timeout to detect if user is offline
             const connectionTimeout = setTimeout(() => {
@@ -4021,19 +4067,24 @@
             else if (meta.type === 'direct') {
                 if (myMode !== 'idle' && myMode !== 'direct') { conn.on('open', () => { conn.send({type:'system', msg:'User busy'}); setTimeout(()=>conn.close(),500); }); return; }
                 
+                // Get peer name from metadata
+                const peerName = meta.name || conn.peer;
+                
                 // Determine call type from metadata
                 const callType = meta.callType;
-                let requestMessage = `Direct Chat request from ${conn.peer}. Accept?`;
+                let requestMessage = `Direct Chat request from ${peerName}. Accept?`;
                 if (callType === 'voice') {
-                    requestMessage = `📞 Incoming Voice Call from ${conn.peer}. Accept?`;
+                    requestMessage = `📞 Incoming Voice Call from ${peerName}. Accept?`;
                 } else if (callType === 'video') {
-                    requestMessage = `📹 Incoming Video Call from ${conn.peer}. Accept?`;
+                    requestMessage = `📹 Incoming Video Call from ${peerName}. Accept?`;
                 }
                 
                 // Check if require approval is enabled
                 if (privacySettings.requireApproval) {
                     showCustomConfirm("Incoming Request", requestMessage, () => {
+                        connectedPeerName = peerName; // Store peer name immediately
                         resetSession(); myMode = 'direct'; isHost = false; connections.push(conn); setupDataConnection(conn); updateUIForMode('direct');
+                        document.getElementById('header-title').innerText = "🤝 " + peerName;
                     }, () => { 
                         conn.on('open', () => { 
                             conn.send({type:'system', msg:'Connection request declined'}); 
@@ -4042,7 +4093,9 @@
                     });
                 } else {
                     // Auto-accept connection
+                    connectedPeerName = peerName; // Store peer name immediately
                     resetSession(); myMode = 'direct'; isHost = false; connections.push(conn); setupDataConnection(conn); updateUIForMode('direct');
+                    document.getElementById('header-title').innerText = "🤝 " + peerName;
                     let acceptMsg = "Direct connection accepted automatically";
                     if (callType === 'voice') acceptMsg = "📞 Voice call accepted automatically";
                     else if (callType === 'video') acceptMsg = "📹 Video call accepted automatically";
@@ -6915,12 +6968,22 @@
             // Initial discovery
             discoverGlobalRoomPeers();
             
+            // Try beacon peers for discovery (when signaling server is down)
+            if (!signalingConnected) {
+                tryBeaconDiscovery();
+            }
+            
             // Continue discovery every 5 seconds
             globalDiscoveryInterval = setInterval(() => {
                 if (isInGlobalRoom) {
                     saveGlobalRoomPresence(); // Keep presence alive
                     discoverGlobalRoomPeers();
                     cleanupOldGlobalUsers();
+                    
+                    // Periodically try beacon discovery if not connected to signaling
+                    if (!signalingConnected && Math.random() < 0.2) {
+                        tryBeaconDiscovery();
+                    }
                 }
             }, 5000);
             
@@ -6933,12 +6996,65 @@
                     
                     const userCount = Object.keys(globalRoomUsers).length;
                     if (userCount <= 1) {
-                        appendSystemMessage("🌍 Welcome to UChat All! You're the first one here. Share your ID with friends to chat!");
+                        appendSystemMessage("🌍 Welcome to UChat All! Waiting for other users to join...");
+                        appendSystemMessage("💡 Tip: Share your ID with friends or ask them to join UChat All!");
                     } else {
                         appendSystemMessage(`🌍 Welcome to UChat All! ${userCount} users online.`);
                     }
                 }
             }, 1500);
+        }
+        
+        // Try to discover peers using well-known beacon IDs
+        function tryBeaconDiscovery() {
+            // Create a unique beacon ID based on current time slot (changes every 10 minutes)
+            const timeSlot = Math.floor(Date.now() / 600000); // 10 minute slots
+            const dynamicBeaconId = `uchat-global-${timeSlot}`;
+            
+            // Try to connect to dynamic beacon
+            tryConnectToBeacon(dynamicBeaconId);
+            
+            // Also try to register as a beacon (first one to try becomes the beacon)
+            tryBecomeBeacon(dynamicBeaconId);
+        }
+        
+        function tryConnectToBeacon(beaconId) {
+            if (beaconId === peer.id || connections.find(c => c.peer === beaconId)) return;
+            
+            try {
+                const conn = peer.connect(beaconId, {
+                    metadata: {
+                        type: 'global-room',
+                        isGlobalRoom: true,
+                        name: myName,
+                        isBeaconProbe: true
+                    }
+                });
+                
+                conn.on('open', () => {
+                    console.log('[Global Room] Connected to beacon:', beaconId);
+                    conn.send({
+                        type: 'global-user-list-request',
+                        peerId: peer.id,
+                        name: myName
+                    });
+                    
+                    connections.push(conn);
+                    setupGlobalConnection(conn);
+                });
+                
+                conn.on('error', () => {
+                    // Beacon doesn't exist, that's ok
+                    console.log('[Global Room] Beacon not found:', beaconId);
+                });
+            } catch (e) {
+                // Ignore beacon connection errors
+            }
+        }
+        
+        function tryBecomeBeacon(beaconId) {
+            // This is handled automatically by PeerJS - if no one else has this ID, we might get it
+            // For now, we just rely on the dynamic time-slot based discovery
         }
         
         function discoverGlobalRoomPeers() {
@@ -7120,10 +7236,29 @@
                         Object.keys(data.users).forEach(peerId => {
                             if (!globalRoomUsers[peerId]) {
                                 globalRoomUsers[peerId] = data.users[peerId];
+                                // Try to connect to new peers
+                                if (peerId !== peer.id) {
+                                    connectToGlobalPeer(peerId);
+                                }
                             }
                         });
                     }
                     updateGlobalRoomUI();
+                    break;
+                    
+                case 'global-user-list-request':
+                    // Someone is asking for our user list (beacon discovery)
+                    conn.send({ 
+                        type: 'global-users', 
+                        users: globalRoomUsers 
+                    });
+                    
+                    // Also add them to our list if not already there
+                    if (data.peerId && !globalRoomUsers[data.peerId]) {
+                        globalRoomUsers[data.peerId] = { name: data.name, joinTime: Date.now() };
+                        appendSystemMessage(`🌍 ${data.name} joined UChat All`);
+                        updateGlobalRoomUI();
+                    }
                     break;
                     
                 case 'global-text':
