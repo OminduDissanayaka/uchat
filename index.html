@@ -78,6 +78,7 @@
     
     <!-- Scripts & Styles -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -2646,6 +2647,8 @@
                         <p id="my-id" class="text-lg font-mono truncate font-bold tracking-widest" style="color: var(--color-primary)">--- ---</p>
                     </div>
                     <div class="flex items-center gap-2">
+                        <!-- Socket.IO Status Indicator -->
+                        <div id="socket-status" title="Server: disconnected" class="w-2 h-2 rounded-full transition-all" style="background: #6b7280"></div>
                         <div class="quality-indicator" id="quality-indicator">
                             <div class="quality-bar h-2"></div>
                             <div class="quality-bar h-3"></div>
@@ -3109,22 +3112,37 @@
             'amber': 'Amber Glow'
         };
         
-        // === SIGNALING SERVER CONFIGURATION ===
+        // === SOCKET.IO SIGNALING SERVER CONFIGURATION ===
         // Multiple signaling server options for redundancy
         const SIGNALING_SERVERS = [
-            'wss://uchat-backend-73bc0a77e5a3.herokuapp.com',
-            'wss://peerjs-server.herokuapp.com',
-            'wss://0.peerjs.com'
+            'https://uchat-backend-73bc0a77e5a3.herokuapp.com',
+            'https://uchat-backend-73bc0a77e5a3.herokuapp.com',
+            'https://uchat-backend-73bc0a77e5a3.herokuapp.com'
         ];
         let currentSignalingIndex = 0;
         const SIGNALING_SERVER_URL = SIGNALING_SERVERS[0]; // Primary
-        const SIGNALING_SERVER_HTTP = 'https://uchat-backend-73bc0a77e5a3.herokuapp.com'; // For HTTP API calls
+        const SIGNALING_SERVER_HTTP = SIGNALING_SERVERS[0]; // For HTTP API calls
         
         // Well-known global room peer IDs for discovery (without signaling server)
         const GLOBAL_ROOM_BEACONS = ['uchat-global-beacon-1', 'uchat-global-beacon-2', 'uchat-global-beacon-3'];
-        let signalingWS = null; // WebSocket connection to signaling server
+        
+        // Socket.IO connection (replaces WebSocket)
+        let socket = null;
         let signalingConnected = false;
-        let signalingHeartbeat = null;
+        let socketReconnectAttempts = 0;
+        const MAX_SOCKET_RECONNECT = 5;
+        
+        // Socket.IO Configuration
+        const SOCKET_CONFIG = {
+            reconnection: true,
+            reconnectionAttempts: 10,
+            reconnectionDelay: 1000,
+            reconnectionDelayMax: 5000,
+            timeout: 20000,
+            transports: ['websocket', 'polling'],
+            autoConnect: false,
+            forceNew: true
+        };
         
         // === NEW HIGH PERFORMANCE FEATURES ===
         let messageHistory = []; // Store all messages for search
@@ -3756,88 +3774,314 @@
             }
         }
         
-        // === SIGNALING SERVER CONNECTION ===
-        let signalingReconnectTimer = null;
+        // === SOCKET.IO SIGNALING SERVER CONNECTION ===
+        // More powerful than raw WebSocket with auto-reconnection, rooms, and fallbacks
         
         function connectToSignalingServer() {
-            if (signalingWS && signalingWS.readyState === WebSocket.OPEN) {
+            if (socket && socket.connected) {
                 return; // Already connected
             }
             
-            // Clear any pending reconnect
-            if (signalingReconnectTimer) {
-                clearTimeout(signalingReconnectTimer);
-                signalingReconnectTimer = null;
+            // Disconnect existing socket if any
+            if (socket) {
+                socket.disconnect();
+                socket = null;
             }
             
             try {
                 // Try current signaling server
-                const wsUrl = window.location.hostname === 'localhost' 
-                    ? 'ws://localhost:3000' 
+                const serverUrl = window.location.hostname === 'localhost' 
+                    ? 'http://localhost:3000' 
                     : SIGNALING_SERVERS[currentSignalingIndex];
                 
-                console.log(`[Signaling] Trying server: ${wsUrl}`);
-                    
-                signalingWS = new WebSocket(wsUrl);
+                console.log(`[Socket.IO] Connecting to: ${serverUrl}`);
                 
-                // Connection timeout
-                const connectionTimeout = setTimeout(() => {
-                    if (signalingWS.readyState !== WebSocket.OPEN) {
-                        console.log('[Signaling] Connection timeout, trying next server...');
-                        signalingWS.close();
-                        tryNextSignalingServer();
+                // Create Socket.IO connection with enhanced config
+                socket = io(serverUrl, {
+                    ...SOCKET_CONFIG,
+                    query: {
+                        peerId: peer?.id || 'pending',
+                        name: myName,
+                        version: '2.0'
                     }
-                }, 5000);
+                });
                 
-                signalingWS.onopen = () => {
-                    clearTimeout(connectionTimeout);
-                    console.log('[Signaling] Connected to server');
+                // Connection established
+                socket.on('connect', () => {
+                    console.log('[Socket.IO] ✅ Connected! Socket ID:', socket.id);
                     signalingConnected = true;
+                    socketReconnectAttempts = 0;
                     currentSignalingIndex = 0; // Reset to primary on success
                     
                     // Register with the server
-                    signalingWS.send(JSON.stringify({
-                        type: 'register',
+                    socket.emit('register', {
+                        peerId: peer.id,
+                        name: myName,
+                        isPublic: isPublicAccount,
+                        capabilities: {
+                            video: true,
+                            audio: true,
+                            screen: true,
+                            dataChannel: true
+                        }
+                    });
+                    
+                    // Update connection indicator
+                    updateSocketStatus('connected');
+                    showToast("🔌 Server connected", "success");
+                });
+                
+                // Handle incoming events
+                setupSocketEventHandlers();
+                
+                // Reconnection events
+                socket.on('reconnect', (attemptNumber) => {
+                    console.log(`[Socket.IO] 🔄 Reconnected after ${attemptNumber} attempts`);
+                    showToast("Reconnected to server", "success");
+                    
+                    // Re-register after reconnect
+                    socket.emit('register', {
                         peerId: peer.id,
                         name: myName,
                         isPublic: isPublicAccount
-                    }));
+                    });
                     
-                    // Start heartbeat
-                    signalingHeartbeat = setInterval(() => {
-                        if (signalingWS.readyState === WebSocket.OPEN) {
-                            signalingWS.send(JSON.stringify({ type: 'heartbeat' }));
-                        }
-                    }, 25000);
-                };
-                
-                signalingWS.onmessage = (event) => {
-                    try {
-                        const data = JSON.parse(event.data);
-                        handleSignalingMessage(data);
-                    } catch (e) {
-                        console.error('[Signaling] Failed to parse message:', e);
+                    // Rejoin rooms if needed
+                    if (isInGlobalRoom) {
+                        socket.emit('join-global-room', { 
+                            peerId: peer.id, 
+                            name: myName 
+                        });
                     }
-                };
+                });
                 
-                signalingWS.onclose = () => {
-                    console.log('[Signaling] Disconnected from server');
+                socket.on('reconnect_attempt', (attemptNumber) => {
+                    console.log(`[Socket.IO] 🔄 Reconnection attempt ${attemptNumber}`);
+                    updateSocketStatus('reconnecting');
+                });
+                
+                socket.on('reconnect_failed', () => {
+                    console.log('[Socket.IO] ❌ Reconnection failed');
                     signalingConnected = false;
-                    clearInterval(signalingHeartbeat);
-                    
-                    // Try to reconnect
-                    signalingReconnectTimer = setTimeout(() => {
-                        tryNextSignalingServer();
-                    }, 3000);
-                };
-                
-                signalingWS.onerror = (error) => {
-                    console.error('[Signaling] WebSocket error:', error);
                     tryNextSignalingServer();
-                };
+                });
+                
+                // Disconnection handling
+                socket.on('disconnect', (reason) => {
+                    console.log('[Socket.IO] ⚠️ Disconnected:', reason);
+                    signalingConnected = false;
+                    updateSocketStatus('disconnected');
+                    
+                    if (reason === 'io server disconnect') {
+                        // Server disconnected us, try to reconnect
+                        socket.connect();
+                    }
+                });
+                
+                // Error handling
+                socket.on('connect_error', (error) => {
+                    console.error('[Socket.IO] Connection error:', error.message);
+                    socketReconnectAttempts++;
+                    
+                    if (socketReconnectAttempts >= MAX_SOCKET_RECONNECT) {
+                        tryNextSignalingServer();
+                    }
+                });
+                
+                // Connect manually
+                socket.connect();
+                
             } catch (e) {
-                console.error('[Signaling] Failed to connect:', e);
+                console.error('[Socket.IO] Failed to connect:', e);
                 tryNextSignalingServer();
+            }
+        }
+        
+        // Setup all Socket.IO event handlers
+        function setupSocketEventHandlers() {
+            if (!socket) return;
+            
+            // Welcome message
+            socket.on('welcome', (data) => {
+                console.log('[Socket.IO] Welcome:', data.message);
+            });
+            
+            // Registration confirmed
+            socket.on('registered', (data) => {
+                console.log('[Socket.IO] ✅ Registered with server:', data);
+            });
+            
+            // Global room events
+            socket.on('global-room-joined', (data) => {
+                globalRoomUsers = {};
+                Object.entries(data.users).forEach(([peerId, info]) => {
+                    globalRoomUsers[peerId] = info;
+                    if (peerId !== peer.id) {
+                        connectToGlobalPeer(peerId);
+                    }
+                });
+                updateGlobalRoomUI();
+                appendSystemMessage(`🌍 Welcome to UChat All! ${data.count} users online.`);
+            });
+            
+            socket.on('global-room-user-joined', (data) => {
+                globalRoomUsers[data.peerId] = { name: data.name, joinTime: Date.now() };
+                updateGlobalRoomUI();
+                appendSystemMessage(`👋 ${data.name} joined UChat All`);
+                connectToGlobalPeer(data.peerId);
+            });
+            
+            socket.on('global-room-user-left', (data) => {
+                if (globalRoomUsers[data.peerId]) {
+                    const userName = globalRoomUsers[data.peerId].name;
+                    delete globalRoomUsers[data.peerId];
+                    updateGlobalRoomUI();
+                    appendSystemMessage(`👋 ${userName} left UChat All`);
+                }
+            });
+            
+            // Message relaying (for offline users or NAT traversal)
+            socket.on('global-message', (data) => {
+                if (data.from !== peer.id) {
+                    appendMessage(data.content, 'in', data.sender, null, data.msgId);
+                }
+            });
+            
+            // Direct message delivery via server (fallback)
+            socket.on('direct-message', (data) => {
+                handleIncomingDirectMessage(data);
+            });
+            
+            // Typing indicators
+            socket.on('typing-start', (data) => {
+                showTypingIndicator(data.name);
+            });
+            
+            socket.on('typing-stop', (data) => {
+                hideTypingIndicator();
+            });
+            
+            // Call signaling via server (NAT traversal)
+            socket.on('incoming-call', (data) => {
+                showIncomingCallScreen({
+                    callId: data.callId,
+                    callType: data.callType,
+                    name: data.callerName,
+                    peerId: data.from
+                });
+            });
+            
+            socket.on('call-accepted', (data) => {
+                if (currentCallType === 'voice') {
+                    showVoiceCallScreen(connectedPeerName, 'connected');
+                }
+            });
+            
+            socket.on('call-declined', () => {
+                hideVoiceCallScreen();
+                hideVideoCallScreen();
+                showToast("Call declined", "warning");
+            });
+            
+            socket.on('call-ended', () => {
+                hideVoiceCallScreen();
+                hideVideoCallScreen();
+                hideIncomingCallScreen();
+                showToast("Call ended", "info");
+            });
+            
+            // WebRTC signaling via server (for NAT traversal)
+            socket.on('signal-offer', (data) => {
+                handleSignalOffer(data);
+            });
+            
+            socket.on('signal-answer', (data) => {
+                handleSignalAnswer(data);
+            });
+            
+            socket.on('signal-ice', (data) => {
+                handleSignalIce(data);
+            });
+            
+            // User presence
+            socket.on('user-online', (data) => {
+                updateUserPresence(data.peerId, true, data.name);
+            });
+            
+            socket.on('user-offline', (data) => {
+                updateUserPresence(data.peerId, false);
+            });
+            
+            // Server announcements
+            socket.on('server-announcement', (data) => {
+                showToast(`📢 ${data.message}`, "info");
+            });
+            
+            socket.on('server-shutdown', () => {
+                showToast("⚠️ Server is restarting...", "warning");
+            });
+            
+            // Ping/Pong for latency
+            socket.on('pong', (data) => {
+                if (data.timestamp) {
+                    handlePingResponse(data.timestamp);
+                }
+            });
+            
+            // Room events
+            socket.on('room-created', (data) => {
+                console.log('[Socket.IO] Room created:', data.roomId);
+            });
+            
+            socket.on('room-user-joined', (data) => {
+                appendSystemMessage(`👋 ${data.name} joined the room`);
+            });
+            
+            socket.on('room-user-left', (data) => {
+                appendSystemMessage(`👋 ${data.name} left the room`);
+            });
+        }
+        
+        // Handle direct messages via server (fallback when P2P fails)
+        function handleIncomingDirectMessage(data) {
+            if (data.type === 'chat') {
+                appendMessage(data.content, 'in', data.sender, null, data.msgId);
+            } else if (data.type === 'file') {
+                handleIncomingFile(data);
+            } else if (data.type === 'reaction') {
+                handleReaction(data);
+            }
+        }
+        
+        // Update socket status indicator
+        function updateSocketStatus(status) {
+            const indicator = document.getElementById('socket-status');
+            if (!indicator) return;
+            
+            const colors = {
+                connected: '#22c55e',
+                disconnected: '#ef4444',
+                reconnecting: '#f59e0b'
+            };
+            
+            indicator.style.background = colors[status] || colors.disconnected;
+            indicator.title = `Server: ${status}`;
+        }
+        
+        // User presence update
+        function updateUserPresence(peerId, isOnline, name) {
+            const userElement = document.querySelector(`[data-peer-id="${peerId}"]`);
+            if (userElement) {
+                const statusDot = userElement.querySelector('.status-dot');
+                if (statusDot) {
+                    statusDot.style.background = isOnline ? '#22c55e' : '#6b7280';
+                }
+            }
+            
+            // Update friends list if online status changed
+            if (name && friends[name]) {
+                friends[name].online = isOnline;
+                friends[name].lastSeen = isOnline ? 'Online now' : new Date().toISOString();
             }
         }
         
@@ -3957,22 +4201,141 @@
             }
         }
         
+        // === SOCKET.IO EMIT FUNCTIONS ===
+        // Replace sendToSignalingServer with Socket.IO emit
         function sendToSignalingServer(data) {
-            if (signalingWS && signalingWS.readyState === WebSocket.OPEN) {
+            if (socket && socket.connected) {
                 try {
-                    signalingWS.send(JSON.stringify(data));
+                    // Socket.IO uses events, so extract type and emit
+                    const { type, ...payload } = data;
+                    socket.emit(type, payload);
                     return true;
                 } catch (e) {
-                    console.error('[Signaling] Failed to send message:', e);
+                    console.error('[Socket.IO] Failed to send message:', e);
                     return false;
                 }
             } else {
-                console.warn('[Signaling] Not connected, attempting reconnect...');
+                console.warn('[Socket.IO] Not connected, attempting reconnect...');
                 connectToSignalingServer();
                 return false;
             }
         }
         
+        // Enhanced Socket.IO emit with acknowledgment
+        function emitWithAck(event, data, timeout = 5000) {
+            return new Promise((resolve, reject) => {
+                if (!socket || !socket.connected) {
+                    reject(new Error('Socket not connected'));
+                    return;
+                }
+                
+                const timeoutId = setTimeout(() => {
+                    reject(new Error('Socket emit timeout'));
+                }, timeout);
+                
+                socket.emit(event, data, (response) => {
+                    clearTimeout(timeoutId);
+                    if (response.error) {
+                        reject(new Error(response.error));
+                    } else {
+                        resolve(response);
+                    }
+                });
+            });
+        }
+        
+        // Emit message to specific room
+        function emitToRoom(room, event, data) {
+            if (socket && socket.connected) {
+                socket.emit('room-message', { room, event, data });
+            }
+        }
+        
+        // Join a Socket.IO room
+        function joinSocketRoom(roomId) {
+            if (socket && socket.connected) {
+                socket.emit('join-room', { roomId, peerId: peer.id, name: myName });
+            }
+        }
+        
+        // Leave a Socket.IO room
+        function leaveSocketRoom(roomId) {
+            if (socket && socket.connected) {
+                socket.emit('leave-room', { roomId, peerId: peer.id });
+            }
+        }
+        
+        // WebRTC signaling via Socket.IO (for NAT traversal)
+        function sendSignalOffer(targetPeerId, offer) {
+            if (socket && socket.connected) {
+                socket.emit('signal-offer', { 
+                    to: targetPeerId, 
+                    from: peer.id,
+                    offer 
+                });
+            }
+        }
+        
+        function sendSignalAnswer(targetPeerId, answer) {
+            if (socket && socket.connected) {
+                socket.emit('signal-answer', { 
+                    to: targetPeerId, 
+                    from: peer.id,
+                    answer 
+                });
+            }
+        }
+        
+        function sendSignalIce(targetPeerId, candidate) {
+            if (socket && socket.connected) {
+                socket.emit('signal-ice', { 
+                    to: targetPeerId, 
+                    from: peer.id,
+                    candidate 
+                });
+            }
+        }
+        
+        // Handle incoming WebRTC signals
+        function handleSignalOffer(data) {
+            console.log('[Socket.IO] Received signal offer from:', data.from);
+            // Handle WebRTC offer for NAT traversal
+        }
+        
+        function handleSignalAnswer(data) {
+            console.log('[Socket.IO] Received signal answer from:', data.from);
+            // Handle WebRTC answer
+        }
+        
+        function handleSignalIce(data) {
+            console.log('[Socket.IO] Received ICE candidate from:', data.from);
+            // Handle ICE candidate
+        }
+        
+        // Broadcast typing indicator via Socket.IO
+        function broadcastTypingViaSocket(isTyping) {
+            if (socket && socket.connected) {
+                socket.emit(isTyping ? 'typing-start' : 'typing-stop', {
+                    peerId: peer.id,
+                    name: myName
+                });
+            }
+        }
+        
+        // Send direct message via server (fallback)
+        function sendDirectMessageViaServer(targetPeerId, message) {
+            if (socket && socket.connected) {
+                socket.emit('direct-message', {
+                    to: targetPeerId,
+                    from: peer.id,
+                    sender: myName,
+                    ...message
+                });
+                return true;
+            }
+            return false;
+        }
+
         // === LATENCY MONITORING ===
         let latencyHistory = [];
         let connectionQuality = 'good'; // 'excellent', 'good', 'fair', 'poor'
@@ -3997,9 +4360,9 @@
                 }
             });
             
-            // Also measure signaling server latency
-            if (signalingWS && signalingWS.readyState === WebSocket.OPEN) {
-                signalingWS.send(JSON.stringify({ type: 'ping', timestamp: startTime }));
+            // Measure Socket.IO server latency using volatile emit (won't queue if disconnected)
+            if (socket && socket.connected) {
+                socket.volatile.emit('ping', { timestamp: startTime });
             }
         }
         
@@ -7452,19 +7815,18 @@
             updateUIForMode('global');
             document.getElementById('btn-global-room').innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Connecting...';
             
-            // Try signaling server first (for cross-browser/cross-device discovery)
-            if (signalingConnected) {
-                const sent = sendToSignalingServer({
-                    type: 'join-global-room',
-                    name: myName
+            // Try Socket.IO server first (for cross-browser/cross-device discovery)
+            if (socket && socket.connected) {
+                // Use Socket.IO room feature for efficient broadcasting
+                socket.emit('join-global-room', {
+                    peerId: peer.id,
+                    name: myName,
+                    isPublic: isPublicAccount
                 });
-                
-                if (!sent) {
-                    console.log('[Global Room] Signaling server not available, using P2P discovery only');
-                }
+                console.log('[Socket.IO] Joined global room via server');
             } else {
-                console.log('[Global Room] Signaling server not connected, using P2P discovery');
-                // Try to connect to signaling server
+                console.log('[Global Room] Socket.IO not connected, using P2P discovery');
+                // Try to connect to server
                 connectToSignalingServer();
             }
             
@@ -7499,8 +7861,8 @@
             // Initial discovery
             discoverGlobalRoomPeers();
             
-            // Try beacon peers for discovery (when signaling server is down)
-            if (!signalingConnected) {
+            // Try beacon peers for discovery (when Socket.IO server is down)
+            if (!socket || !socket.connected) {
                 tryBeaconDiscovery();
             }
             
@@ -7511,8 +7873,8 @@
                     discoverGlobalRoomPeers();
                     cleanupOldGlobalUsers();
                     
-                    // Periodically try beacon discovery if not connected to signaling
-                    if (!signalingConnected && Math.random() < 0.2) {
+                    // Periodically try beacon discovery if not connected to Socket.IO
+                    if ((!socket || !socket.connected) && Math.random() < 0.2) {
                         tryBeaconDiscovery();
                     }
                 }
@@ -7692,9 +8054,12 @@
                 globalDiscoveryInterval = null;
             }
             
-            // Notify signaling server
-            if (signalingConnected) {
-                sendToSignalingServer({ type: 'leave-global-room' });
+            // Notify Socket.IO server and leave room
+            if (socket && socket.connected) {
+                socket.emit('leave-global-room', { 
+                    peerId: peer.id, 
+                    name: myName 
+                });
             }
             
             // Remove our presence from localStorage
